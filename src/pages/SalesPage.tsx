@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useApp } from '@/context/AppContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,7 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Plus, Trash2, BarChart3, TrendingUp, DollarSign, ShoppingCart, Package, Loader2 } from 'lucide-react';
+import { Plus, Trash2, BarChart3, TrendingUp, DollarSign, ShoppingCart, Package, Loader2, Calendar } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -28,18 +28,63 @@ import { toast } from 'sonner';
 
 const ITEMS_PER_PAGE = 25;
 
+const MONTH_NAMES = [
+  'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+  'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+];
+
+// Generate list of last 12 months
+const generateMonthOptions = () => {
+  const options = [];
+  const now = new Date();
+  for (let i = 0; i < 12; i++) {
+    const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    const year = date.getFullYear();
+    const month = date.getMonth() + 1;
+    const value = `${year}-${String(month).padStart(2, '0')}`;
+    const label = `${MONTH_NAMES[month - 1]} ${year}`;
+    options.push({ value, label });
+  }
+  return options;
+};
+
 export default function SalesPage() {
   const { products, sales, addSale, deleteSale, settings, loading } = useApp();
   const [selectedProductId, setSelectedProductId] = useState('');
   const [quantity, setQuantity] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  // Month filter state - default to current month
+  const [selectedMonth, setSelectedMonth] = useState(() => {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  });
 
-  const totalPages = Math.ceil(sales.length / ITEMS_PER_PAGE);
-  const paginatedSales = sales.slice(
+  const monthOptions = useMemo(() => generateMonthOptions(), []);
+
+  // Filter sales by selected month
+  const filteredSales = useMemo(() => {
+    if (!selectedMonth) return sales;
+    
+    const [year, month] = selectedMonth.split('-').map(Number);
+    return sales.filter((sale) => {
+      const saleDate = new Date(sale.createdAt);
+      return saleDate.getFullYear() === year && saleDate.getMonth() + 1 === month;
+    });
+  }, [sales, selectedMonth]);
+
+  const totalPages = Math.ceil(filteredSales.length / ITEMS_PER_PAGE);
+  const paginatedSales = filteredSales.slice(
     (currentPage - 1) * ITEMS_PER_PAGE,
     currentPage * ITEMS_PER_PAGE
   );
+
+  // Reset to page 1 when month changes
+  const handleMonthChange = (month: string) => {
+    setSelectedMonth(month);
+    setCurrentPage(1);
+  };
 
   const handleAddSale = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -71,8 +116,8 @@ export default function SalesPage() {
     }).format(value);
   };
 
-  // Calculate totals
-  const totals = sales.reduce(
+  // Calculate totals from filtered sales (monthly)
+  const totals = useMemo(() => filteredSales.reduce(
     (acc, sale) => ({
       totalSales: acc.totalSales + sale.totalSales,
       totalHpp: acc.totalHpp + sale.totalHpp,
@@ -80,7 +125,10 @@ export default function SalesPage() {
       netProfit: acc.netProfit + sale.netProfit,
     }),
     { totalSales: 0, totalHpp: 0, totalAdminFee: 0, netProfit: 0 }
-  );
+  ), [filteredSales]);
+
+  // Get selected month label for display
+  const selectedMonthLabel = monthOptions.find(opt => opt.value === selectedMonth)?.label || '';
 
   if (loading) {
     return (
@@ -99,8 +147,27 @@ export default function SalesPage() {
   return (
     <div className="animate-fade-in">
       <div className="page-header">
-        <h1 className="page-title">Rekap Penjualan</h1>
-        <p className="page-subtitle">Catat dan lihat ringkasan penjualan Shopee</p>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h1 className="page-title">Rekap Penjualan</h1>
+            <p className="page-subtitle">Catat dan lihat ringkasan penjualan Shopee</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <Calendar className="w-4 h-4 text-muted-foreground" />
+            <Select value={selectedMonth} onValueChange={handleMonthChange}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Pilih bulan..." />
+              </SelectTrigger>
+              <SelectContent className="bg-popover">
+                {monthOptions.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
       </div>
 
       {/* Summary Cards */}
@@ -213,14 +280,14 @@ export default function SalesPage() {
 
       {/* Sales Table */}
       <div className="table-container">
-        {sales.length === 0 ? (
+        {filteredSales.length === 0 ? (
           <div className="p-12 text-center">
             <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-secondary flex items-center justify-center">
               <BarChart3 size={32} className="text-muted-foreground" />
             </div>
             <h3 className="text-lg font-medium text-foreground mb-1">Belum ada penjualan</h3>
             <p className="text-muted-foreground text-sm">
-              Tambahkan penjualan untuk melihat rekap
+              Tidak ada penjualan untuk {selectedMonthLabel}
             </p>
           </div>
         ) : (
@@ -313,8 +380,8 @@ export default function SalesPage() {
               <div className="flex flex-wrap items-center justify-between gap-4">
                 <div className="flex flex-wrap gap-6 text-sm">
                   <div>
-                    <span className="text-muted-foreground">Total Transaksi:</span>
-                    <span className="ml-2 font-semibold text-foreground">{sales.length}</span>
+                    <span className="text-muted-foreground">Transaksi ({selectedMonthLabel}):</span>
+                    <span className="ml-2 font-semibold text-foreground">{filteredSales.length}</span>
                   </div>
                   <div>
                     <span className="text-muted-foreground">Admin Fee:</span>
@@ -322,7 +389,7 @@ export default function SalesPage() {
                   </div>
                 </div>
                 <div className="text-right">
-                  <span className="text-sm text-muted-foreground">Total Laba Bersih:</span>
+                  <span className="text-sm text-muted-foreground">Laba Bersih ({selectedMonthLabel}):</span>
                   <span className={`ml-2 text-lg font-bold ${totals.netProfit >= 0 ? 'text-success' : 'text-destructive'}`}>
                     {formatCurrency(totals.netProfit)}
                   </span>

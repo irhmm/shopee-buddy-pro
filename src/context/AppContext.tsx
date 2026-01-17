@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/context/AuthContext';
 import { toast } from 'sonner';
 
 export interface Product {
@@ -55,6 +56,7 @@ interface AppContextType {
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export function AppProvider({ children }: { children: ReactNode }) {
+  const { franchiseId } = useAuth();
   const [products, setProducts] = useState<Product[]>([]);
   const [settings, setSettings] = useState<AdminSettings>({ adminFeePercent: 5, fixedDeduction: 1000 });
   const [rawSales, setRawSales] = useState<RawSaleRecord[]>([]);
@@ -76,9 +78,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, [rawSales, settings]);
 
   const fetchProducts = useCallback(async () => {
+    if (!franchiseId) return;
+    
     const { data, error } = await supabase
       .from('products')
       .select('*')
+      .eq('franchise_id', franchiseId)
       .order('created_at', { ascending: false });
 
     if (error) {
@@ -97,14 +102,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
         createdAt: new Date(p.created_at),
       }))
     );
-  }, []);
+  }, [franchiseId]);
 
   const fetchSettings = useCallback(async () => {
+    if (!franchiseId) return;
+    
     const { data, error } = await supabase
       .from('admin_settings')
       .select('*')
-      .limit(1)
-      .single();
+      .eq('franchise_id', franchiseId)
+      .maybeSingle();
 
     if (error) {
       console.error('Error fetching settings:', error);
@@ -118,12 +125,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
         fixedDeduction: Number(data.fixed_deduction),
       });
     }
-  }, []);
+  }, [franchiseId]);
 
   const fetchSales = useCallback(async () => {
+    if (!franchiseId) return;
+    
     const { data, error } = await supabase
       .from('sales')
       .select('*')
+      .eq('franchise_id', franchiseId)
       .order('created_at', { ascending: false });
 
     if (error) {
@@ -132,7 +142,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    // Store raw sales data without admin fee calculation
     setRawSales(
       data.map((s) => ({
         id: s.id,
@@ -147,7 +156,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         createdAt: new Date(s.created_at),
       }))
     );
-  }, []);
+  }, [franchiseId]);
 
   const refreshData = useCallback(async () => {
     setLoading(true);
@@ -156,15 +165,20 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, [fetchProducts, fetchSettings, fetchSales]);
 
   useEffect(() => {
-    refreshData();
-  }, [refreshData]);
+    if (franchiseId) {
+      refreshData();
+    }
+  }, [refreshData, franchiseId]);
 
   const addProduct = async (product: Omit<Product, 'id' | 'createdAt'>) => {
+    if (!franchiseId) return;
+    
     const { error } = await supabase.from('products').insert({
       name: product.name,
       code: product.code,
       hpp: product.hpp,
       price: product.price,
+      franchise_id: franchiseId,
     });
 
     if (error) {
@@ -230,13 +244,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
   };
 
   const addSale = async (productId: string, quantity: number, saleDate?: Date) => {
+    if (!franchiseId) return;
+    
     const product = products.find((p) => p.id === productId);
     if (!product) return;
 
     const totalSales = product.price * quantity;
     const totalHpp = product.hpp * quantity;
 
-    // Store only base data - admin fee and profit will be calculated dynamically
     const { error } = await supabase.from('sales').insert({
       product_id: productId,
       product_name: product.name,
@@ -246,8 +261,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
       hpp_per_unit: product.hpp,
       total_sales: totalSales,
       total_hpp: totalHpp,
-      total_admin_fee: 0, // Will be calculated dynamically
-      net_profit: 0, // Will be calculated dynamically
+      total_admin_fee: 0,
+      net_profit: 0,
+      franchise_id: franchiseId,
       created_at: saleDate ? saleDate.toISOString() : new Date().toISOString(),
     });
 

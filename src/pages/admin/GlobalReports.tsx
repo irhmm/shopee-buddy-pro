@@ -133,10 +133,9 @@ export default function GlobalReports() {
       Object.keys(aggregated).forEach((id) => {
         const data = aggregated[id];
         const franchise = franchiseList.find(f => f.id === id);
-        data.netProfit = data.totalSales - data.totalHpp - data.totalAdminFee;
-        data.profitSharing = data.netProfit > 0 
-          ? (data.netProfit * (franchise?.profitSharingPercent || 0) / 100) 
-          : 0;
+        data.netProfit = data.totalSales - data.totalHpp - data.totalAdminFee; // tetap hitung untuk display
+        // Bagi hasil dihitung dari total penjualan langsung
+        data.profitSharing = data.totalSales * (franchise?.profitSharingPercent || 0) / 100;
       });
 
       setSalesData(Object.values(aggregated));

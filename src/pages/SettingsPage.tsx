@@ -77,18 +77,6 @@ export default function SettingsPage() {
         <p className="page-subtitle">Atur biaya admin Shopee yang berlaku untuk semua produk</p>
       </div>
 
-      {/* Info Card */}
-      <div className="mb-6 p-4 rounded-xl bg-accent border border-primary/20">
-        <div className="flex gap-3">
-          <Info className="w-5 h-5 text-accent-foreground flex-shrink-0 mt-0.5" />
-          <div className="text-sm text-accent-foreground">
-            <p className="font-medium mb-1">Bagaimana perhitungan biaya admin?</p>
-            <p className="text-accent-foreground/80">
-              Total Admin = (Penjualan × Persentase Admin) + Potongan Tetap
-            </p>
-          </div>
-        </div>
-      </div>
 
       {/* Settings Form */}
       <div className="form-section">

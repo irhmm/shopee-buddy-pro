@@ -24,6 +24,7 @@ import NotFound from "./pages/NotFound";
 import AdminDashboard from "./pages/admin/Dashboard";
 import FranchiseManagement from "./pages/admin/FranchiseManagement";
 import ProductsGlobal from "./pages/admin/ProductsGlobal";
+import ProductPerformance from "./pages/admin/ProductPerformance";
 import ProfitSharingSettings from "./pages/admin/ProfitSharingSettings";
 import ProfitSharingPayments from "./pages/admin/ProfitSharingPayments";
 import GlobalReports from "./pages/admin/GlobalReports";
@@ -71,6 +72,11 @@ function AppRoutes() {
       <Route path="/admin/reports" element={
         <AdminRoute>
           <AdminLayout><GlobalReports /></AdminLayout>
+        </AdminRoute>
+      } />
+      <Route path="/admin/product-performance" element={
+        <AdminRoute>
+          <AdminLayout><ProductPerformance /></AdminLayout>
         </AdminRoute>
       } />
 

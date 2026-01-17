@@ -226,9 +226,9 @@ export default function ProductPerformance() {
 
       setPreviousMonthData(prevRanked);
 
-      // Fetch 12 months trend data for line chart
-      const endDateTrend = endOfMonth(new Date(selectedYear, selectedMonth - 1));
-      const startDateTrend = startOfMonth(subMonths(endDateTrend, 11));
+      // Fetch yearly trend data for line chart (Januari - Desember berdasarkan filter tahun)
+      const startDateTrend = new Date(selectedYear, 0, 1); // 1 Januari
+      const endDateTrend = new Date(selectedYear, 11, 31, 23, 59, 59); // 31 Desember
 
       let trendSalesQuery = supabase
         .from('sales')
@@ -260,13 +260,13 @@ export default function ProductPerformance() {
 
       setTopProductNames(top5Products);
 
-      // Build monthly data for each of the 12 months
+      // Build monthly data for January - December of selected year
       const monthlyData: MonthlyProductData[] = [];
-      for (let i = 11; i >= 0; i--) {
-        const monthDate = subMonths(endDateTrend, i);
+      for (let monthIndex = 0; monthIndex < 12; monthIndex++) {
+        const monthDate = new Date(selectedYear, monthIndex, 1);
         const monthStart = startOfMonth(monthDate);
         const monthEnd = endOfMonth(monthDate);
-        const monthLabel = format(monthDate, 'MMM yy', { locale: localeId });
+        const monthLabel = format(monthDate, 'MMM', { locale: localeId });
 
         // Filter sales for this month
         const monthSales = (trendSalesData || []).filter(sale => {
@@ -555,10 +555,10 @@ export default function ProductPerformance() {
         <CardHeader className="pb-2">
           <CardTitle className="text-base font-bold flex items-center gap-2">
             <Medal className="w-5 h-5 text-primary" />
-            Grafik Trend Penjualan Produk (12 Bulan Terakhir)
+            Grafik Trend Penjualan Produk Tahun {selectedYear}
           </CardTitle>
           <p className="text-sm text-muted-foreground">
-            Trend penjualan 5 produk terlaris dalam 12 bulan terakhir
+            Trend penjualan 5 produk terlaris dari Januari - Desember {selectedYear}
           </p>
         </CardHeader>
         <CardContent>

@@ -76,6 +76,8 @@ export default function SalesPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [saleDate, setSaleDate] = useState<Date>(new Date());
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+  const [isProductOpen, setIsProductOpen] = useState(false);
   
   // Month filter state - default to current month
   const [selectedMonth, setSelectedMonth] = useState(() => {
@@ -345,7 +347,7 @@ export default function SalesPage() {
               {/* Date Picker */}
               <div className="space-y-2">
                 <Label>Tanggal</Label>
-                <Popover>
+                <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
                   <PopoverTrigger asChild>
                     <Button
                       variant="outline"
@@ -363,7 +365,12 @@ export default function SalesPage() {
                     <Calendar
                       mode="single"
                       selected={saleDate}
-                      onSelect={(date) => date && setSaleDate(date)}
+                      onSelect={(date) => {
+                        if (date) {
+                          setSaleDate(date);
+                          setIsCalendarOpen(false);
+                        }
+                      }}
                       disabled={(date) => date > new Date()}
                       initialFocus
                       className="pointer-events-auto"
@@ -375,7 +382,7 @@ export default function SalesPage() {
               {/* Product Select with Search */}
               <div className="space-y-2">
                 <Label>Produk</Label>
-                <Popover>
+                <Popover open={isProductOpen} onOpenChange={setIsProductOpen}>
                   <PopoverTrigger asChild>
                     <Button
                       variant="outline"
@@ -407,6 +414,7 @@ export default function SalesPage() {
                               value={`${product.code} ${product.name}`}
                               onSelect={() => {
                                 setSelectedProductId(product.id);
+                                setIsProductOpen(false);
                               }}
                             >
                               <Check

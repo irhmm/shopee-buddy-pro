@@ -1,8 +1,9 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
+import { useRealtimeSubscription } from '@/hooks/use-realtime';
 import { 
   TrendingUp, 
   DollarSign, 
@@ -78,11 +79,7 @@ export default function AdminDashboard() {
     return [currentYear, currentYear - 1, currentYear - 2];
   }, []);
 
-  useEffect(() => {
-    fetchData();
-  }, [selectedYear]);
-
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setLoading(true);
     try {
       // Fetch all franchises
@@ -192,7 +189,18 @@ export default function AdminDashboard() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [selectedYear]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  // Realtime subscriptions for automatic updates
+  useRealtimeSubscription([
+    { table: 'sales', onDataChange: fetchData },
+    { table: 'franchises', onDataChange: fetchData },
+    { table: 'admin_settings', onDataChange: fetchData },
+  ]);
 
   const totals = useMemo(() => {
     return franchiseStats.reduce(

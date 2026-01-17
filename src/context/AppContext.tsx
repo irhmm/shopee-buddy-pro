@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect, ReactNode, useCa
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/context/AuthContext';
 import { toast } from 'sonner';
+import { useRealtimeSubscription } from '@/hooks/use-realtime';
 
 export interface Product {
   id: string;
@@ -169,6 +170,28 @@ export function AppProvider({ children }: { children: ReactNode }) {
       refreshData();
     }
   }, [refreshData, franchiseId]);
+
+  // Realtime subscriptions for automatic updates
+  useRealtimeSubscription(
+    [
+      {
+        table: 'sales',
+        filter: franchiseId ? `franchise_id=eq.${franchiseId}` : undefined,
+        onDataChange: fetchSales,
+      },
+      {
+        table: 'products',
+        filter: franchiseId ? `franchise_id=eq.${franchiseId}` : undefined,
+        onDataChange: fetchProducts,
+      },
+      {
+        table: 'admin_settings',
+        filter: franchiseId ? `franchise_id=eq.${franchiseId}` : undefined,
+        onDataChange: fetchSettings,
+      },
+    ],
+    !!franchiseId
+  );
 
   const addProduct = async (product: Omit<Product, 'id' | 'createdAt'>) => {
     if (!franchiseId) return;

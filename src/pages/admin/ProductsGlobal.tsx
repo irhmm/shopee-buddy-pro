@@ -1,5 +1,6 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { useRealtimeSubscription } from '@/hooks/use-realtime';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Pagination } from '@/components/Pagination';
@@ -42,11 +43,7 @@ export default function ProductsGlobal() {
   const [filterFranchise, setFilterFranchise] = useState<string>('all');
   const [sortMargin, setSortMargin] = useState<'default' | 'highest' | 'lowest'>('default');
 
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setLoading(true);
     try {
       // Fetch franchises
@@ -93,7 +90,17 @@ export default function ProductsGlobal() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  // Realtime subscriptions for automatic updates
+  useRealtimeSubscription([
+    { table: 'products', onDataChange: fetchData },
+    { table: 'franchises', onDataChange: fetchData },
+  ]);
 
   // Filter, search, and sort products
   const filteredProducts = useMemo(() => {

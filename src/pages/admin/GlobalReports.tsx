@@ -1,5 +1,6 @@
-import { useState, useEffect, useMemo, Fragment } from 'react';
+import { useState, useEffect, useMemo, Fragment, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { useRealtimeSubscription } from '@/hooks/use-realtime';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
@@ -94,11 +95,7 @@ export default function GlobalReports() {
     return [currentYear, currentYear - 1, currentYear - 2];
   }, []);
 
-  useEffect(() => {
-    fetchData();
-  }, [selectedYear, selectedMonth]);
-
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setLoading(true);
     try {
       // Fetch franchises
@@ -205,7 +202,18 @@ export default function GlobalReports() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [selectedYear, selectedMonth]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  // Realtime subscriptions for automatic updates
+  useRealtimeSubscription([
+    { table: 'sales', onDataChange: fetchData },
+    { table: 'franchises', onDataChange: fetchData },
+    { table: 'admin_settings', onDataChange: fetchData },
+  ]);
 
   const filteredData = useMemo(() => {
     if (selectedFranchise === 'all') {

@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { useRealtimeSubscription } from '@/hooks/use-realtime';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
@@ -106,15 +107,7 @@ export default function ProfitSharingPayments() {
   // Generate year options (last 5 years)
   const yearOptions = Array.from({ length: 5 }, (_, i) => currentDate.getFullYear() - i);
 
-  useEffect(() => {
-    fetchPayments();
-  }, [selectedMonth, selectedYear]);
-
-  useEffect(() => {
-    filterPayments();
-  }, [payments, searchQuery]);
-
-  const fetchPayments = async () => {
+  const fetchPayments = useCallback(async () => {
     setLoading(true);
     try {
       const { data, error } = await supabase
@@ -159,7 +152,21 @@ export default function ProfitSharingPayments() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [selectedMonth, selectedYear]);
+
+  useEffect(() => {
+    fetchPayments();
+  }, [fetchPayments]);
+
+  useEffect(() => {
+    filterPayments();
+  }, [payments, searchQuery]);
+
+  // Realtime subscriptions for automatic updates
+  useRealtimeSubscription([
+    { table: 'profit_sharing_payments', onDataChange: fetchPayments },
+    { table: 'sales', onDataChange: fetchPayments },
+  ]);
 
   const filterPayments = () => {
     if (!searchQuery.trim()) {

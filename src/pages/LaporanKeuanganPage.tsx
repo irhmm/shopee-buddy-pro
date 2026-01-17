@@ -1,8 +1,9 @@
-import { useMemo, useState, useEffect } from 'react';
+import { useMemo, useState, useEffect, useCallback } from 'react';
 import { useApp } from '@/context/AppContext';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useRealtimeSubscription } from '@/hooks/use-realtime';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Pagination } from '@/components/Pagination';
@@ -73,6 +74,7 @@ const CustomLegend = () => (
 export default function LaporanKeuanganPage() {
   const { sales } = useApp();
   const { franchiseId } = useAuth();
+  const queryClient = useQueryClient();
   const currentYear = new Date().getFullYear();
   const [selectedYear, setSelectedYear] = useState(currentYear);
   
@@ -100,6 +102,23 @@ export default function LaporanKeuanganPage() {
     },
     enabled: !!franchiseId,
   });
+
+  // Callback for realtime updates
+  const refetchPayments = useCallback(() => {
+    queryClient.invalidateQueries({ queryKey: ['profit-sharing-payments', franchiseId] });
+  }, [queryClient, franchiseId]);
+
+  // Realtime subscription for profit sharing payments
+  useRealtimeSubscription(
+    [
+      { 
+        table: 'profit_sharing_payments', 
+        filter: franchiseId ? `franchise_id=eq.${franchiseId}` : undefined,
+        onDataChange: refetchPayments 
+      },
+    ],
+    !!franchiseId
+  );
 
   // Hitung tahun yang tersedia dari data profit sharing
   const availableYearsBagiHasil = useMemo(() => {

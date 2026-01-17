@@ -224,10 +224,8 @@ export default function ProfitSharingPayments() {
           0
         );
 
-        const netProfit = totalSales - totalHpp - totalAdminFee;
-        const profitSharingAmount = netProfit > 0 
-          ? netProfit * (franchise.profit_sharing_percent / 100) 
-          : 0;
+        // Bagi hasil dihitung dari total penjualan langsung
+        const profitSharingAmount = totalSales * (franchise.profit_sharing_percent / 100);
 
         paymentUpdates.push({
           franchise_id: franchise.id,

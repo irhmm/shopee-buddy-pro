@@ -144,9 +144,9 @@ export default function AdminDashboard() {
             return sum + ((Number(s.total_sales) * adminFeePercent / 100) + fixedDeduction);
           }, 0);
 
-          const profit = totalSales - totalHpp - totalAdminFee;
           const profitSharingPercent = Number(franchise.profit_sharing_percent) || 0;
-          const profitSharing = profit > 0 ? (profit * profitSharingPercent / 100) : 0;
+          // Bagi hasil dihitung dari total penjualan langsung
+          const profitSharing = totalSales * profitSharingPercent / 100;
 
           monthData[franchise.name] = profitSharing;
         });
@@ -170,9 +170,10 @@ export default function AdminDashboard() {
           return sum + ((Number(s.total_sales) * adminFeePercent / 100) + fixedDeduction);
         }, 0);
 
-        const totalProfit = totalSales - totalHpp - totalAdminFee;
+        const totalProfit = totalSales - totalHpp - totalAdminFee; // tetap hitung untuk display
         const profitSharingPercent = Number(franchise.profit_sharing_percent) || 0;
-        const profitSharing = totalProfit > 0 ? (totalProfit * profitSharingPercent / 100) : 0;
+        // Bagi hasil dihitung dari total penjualan langsung
+        const profitSharing = totalSales * profitSharingPercent / 100;
 
         return {
           id: franchise.id,

@@ -74,46 +74,29 @@ export function AdminLayout({ children }: AdminLayoutProps) {
         )}
       >
         {/* Logo */}
-        <div className={cn(
-          "h-16 flex items-center border-b border-sidebar-border transition-all duration-300",
-          sidebarOpen ? "justify-between px-4" : "justify-center px-2"
-        )}>
-          <div className={cn(
-            "flex items-center gap-3 overflow-hidden",
-            !sidebarOpen && "lg:justify-center"
-          )}>
-            <div className={cn(
-              "bg-gradient-to-br from-violet-600 to-indigo-600 rounded-xl flex items-center justify-center shadow-card flex-shrink-0 transition-all duration-300",
-              sidebarOpen ? "w-10 h-10" : "w-9 h-9"
-            )}>
-              <Shield className={cn(
-                "text-white transition-all duration-300",
-                sidebarOpen ? "w-6 h-6" : "w-5 h-5"
-              )} />
+        <div className="h-16 flex items-center justify-between px-4 border-b border-sidebar-border">
+          <div className={cn("flex items-center gap-3", !sidebarOpen && "lg:justify-center")}>
+            <div className="w-10 h-10 bg-gradient-to-br from-violet-600 to-indigo-600 rounded-xl flex items-center justify-center shadow-card flex-shrink-0">
+              <Shield className="w-6 h-6 text-white" />
             </div>
             {sidebarOpen && (
-              <div className="overflow-hidden min-w-0">
+              <div className="overflow-hidden">
                 <h1 className="font-bold text-sidebar-foreground text-lg">Super Admin</h1>
                 <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
               </div>
             )}
           </div>
-          {sidebarOpen && (
-            <button
-              onClick={() => setSidebarOpen(!sidebarOpen)}
-              className="hidden lg:flex p-1.5 rounded-lg hover:bg-sidebar-accent transition-colors flex-shrink-0"
-            >
-              <Menu size={20} className="text-sidebar-foreground" />
-            </button>
-          )}
+          <button
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+            className="hidden lg:flex p-1.5 rounded-lg hover:bg-sidebar-accent transition-colors"
+          >
+            <Menu size={20} className="text-sidebar-foreground" />
+          </button>
         </div>
 
         {/* Navigation */}
         <TooltipProvider delayDuration={0}>
-          <nav className={cn(
-            "space-y-1 transition-all duration-300",
-            sidebarOpen ? "p-3" : "p-2"
-          )}>
+          <nav className="p-3 space-y-1">
             {navItems.map((item) => {
               const Icon = item.icon;
               const isActive = location.pathname === item.path;
@@ -123,13 +106,12 @@ export function AdminLayout({ children }: AdminLayoutProps) {
                   to={item.path}
                   onClick={() => setMobileMenuOpen(false)}
                   className={cn(
-                    "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200",
-                    "text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent",
-                    isActive && "bg-sidebar-accent text-sidebar-foreground",
-                    !sidebarOpen && "lg:justify-center lg:px-2 lg:py-2.5"
+                    "sidebar-link",
+                    isActive && "active",
+                    !sidebarOpen && "lg:justify-center lg:px-0 lg:py-3"
                   )}
                 >
-                  <Icon size={20} className="flex-shrink-0" />
+                  <Icon size={22} className="flex-shrink-0" />
                   {(sidebarOpen || mobileMenuOpen) && <span>{item.label}</span>}
                 </Link>
               );
@@ -154,37 +136,18 @@ export function AdminLayout({ children }: AdminLayoutProps) {
         </TooltipProvider>
 
         {/* Logout Button */}
-        <div className={cn(
-          "absolute bottom-0 left-0 right-0 border-t border-sidebar-border transition-all duration-300",
-          sidebarOpen ? "p-4" : "p-2"
-        )}>
-          <TooltipProvider delayDuration={0}>
-            {!sidebarOpen && !mobileMenuOpen ? (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    onClick={signOut}
-                    className="w-full justify-center px-2 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-                  >
-                    <LogOut size={20} />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent side="right" className="font-medium">
-                  Logout
-                </TooltipContent>
-              </Tooltip>
-            ) : (
-              <Button
-                variant="ghost"
-                onClick={signOut}
-                className="w-full justify-start gap-3 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-              >
-                <LogOut size={20} />
-                <span>Logout</span>
-              </Button>
+        <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-sidebar-border">
+          <Button
+            variant="ghost"
+            onClick={signOut}
+            className={cn(
+              "w-full justify-start gap-3 text-muted-foreground hover:text-destructive hover:bg-destructive/10",
+              !sidebarOpen && "lg:justify-center lg:px-3"
             )}
-          </TooltipProvider>
+          >
+            <LogOut size={20} />
+            {(sidebarOpen || mobileMenuOpen) && <span>Logout</span>}
+          </Button>
         </div>
       </aside>
 

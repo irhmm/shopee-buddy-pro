@@ -7,22 +7,28 @@ import {
   TrendingUp, 
   DollarSign, 
   ShoppingCart, 
-  Users, 
-  Store,
-  ArrowUpRight,
-  ArrowDownRight
+  Store
 } from 'lucide-react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
-import { format } from 'date-fns';
-import { id } from 'date-fns/locale';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 
-interface FranchiseStats {
+interface FranchiseInfo {
+  id: string;
+  name: string;
+  profitSharingPercent: number;
+}
+
+interface FranchiseYearlyStats {
   id: string;
   name: string;
   totalSales: number;
   totalProfit: number;
   profitSharingPercent: number;
   profitSharing: number;
+}
+
+interface MonthlyProfitSharing {
+  month: string;
+  [franchiseName: string]: number | string;
 }
 
 const formatCurrency = (value: number) => {
@@ -49,25 +55,31 @@ const formatCompactCurrency = (value: number) => {
 
 const COLORS = ['#f97316', '#10b981', '#3b82f6', '#8b5cf6', '#ec4899', '#14b8a6', '#f59e0b', '#6366f1'];
 
+const MONTHS = [
+  'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun',
+  'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'
+];
+
+const MONTHS_FULL = [
+  'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+  'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+];
+
 export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
-  const [franchises, setFranchises] = useState<FranchiseStats[]>([]);
+  const [franchiseList, setFranchiseList] = useState<FranchiseInfo[]>([]);
+  const [franchiseStats, setFranchiseStats] = useState<FranchiseYearlyStats[]>([]);
+  const [monthlyChartData, setMonthlyChartData] = useState<MonthlyProfitSharing[]>([]);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
-  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
 
   const availableYears = useMemo(() => {
     const currentYear = new Date().getFullYear();
     return [currentYear, currentYear - 1, currentYear - 2];
   }, []);
 
-  const months = [
-    'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
-    'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
-  ];
-
   useEffect(() => {
     fetchData();
-  }, [selectedYear, selectedMonth]);
+  }, [selectedYear]);
 
   const fetchData = async () => {
     setLoading(true);
@@ -80,9 +92,9 @@ export default function AdminDashboard() {
 
       if (franchiseError) throw franchiseError;
 
-      // Fetch all sales for the selected period
-      const startDate = new Date(selectedYear, selectedMonth - 1, 1);
-      const endDate = new Date(selectedYear, selectedMonth, 0);
+      // Fetch all sales for the entire year (January 1 - December 31)
+      const startDate = new Date(selectedYear, 0, 1);
+      const endDate = new Date(selectedYear, 11, 31, 23, 59, 59);
 
       const { data: salesData, error: salesError } = await supabase
         .from('sales')
@@ -99,23 +111,67 @@ export default function AdminDashboard() {
 
       if (settingsError) throw settingsError;
 
-      // Aggregate sales by franchise
-      const franchiseStats: FranchiseStats[] = (franchiseData || []).map((franchise) => {
-        const franchiseSales = (salesData || []).filter(s => s.franchise_id === franchise.id);
-        const franchiseSettings = (settingsData || []).find(s => s.franchise_id === franchise.id);
-        
-        const totalSales = franchiseSales.reduce((sum, s) => sum + Number(s.total_sales), 0);
-        const totalHpp = franchiseSales.reduce((sum, s) => sum + Number(s.total_hpp), 0);
-        
-        // Calculate admin fee based on franchise settings
+      const franchises = franchiseData || [];
+      const sales = salesData || [];
+      const settings = settingsData || [];
+
+      // Store franchise list for chart legend
+      const franchiseInfoList: FranchiseInfo[] = franchises.map(f => ({
+        id: f.id,
+        name: f.name,
+        profitSharingPercent: Number(f.profit_sharing_percent) || 0
+      }));
+      setFranchiseList(franchiseInfoList);
+
+      // Calculate monthly profit sharing data for chart
+      const monthlyData: MonthlyProfitSharing[] = MONTHS.map((monthName, monthIndex) => {
+        const monthData: MonthlyProfitSharing = { month: monthName };
+
+        franchises.forEach((franchise) => {
+          // Filter sales for this franchise in this month
+          const franchiseSales = sales.filter(s => {
+            const saleDate = new Date(s.created_at);
+            return s.franchise_id === franchise.id && saleDate.getMonth() === monthIndex;
+          });
+
+          const franchiseSettings = settings.find(s => s.franchise_id === franchise.id);
+          const adminFeePercent = franchiseSettings?.admin_fee_percent || 5;
+          const fixedDeduction = franchiseSettings?.fixed_deduction || 1000;
+
+          const totalSales = franchiseSales.reduce((sum, s) => sum + Number(s.total_sales), 0);
+          const totalHpp = franchiseSales.reduce((sum, s) => sum + Number(s.total_hpp), 0);
+          const totalAdminFee = franchiseSales.reduce((sum, s) => {
+            return sum + ((Number(s.total_sales) * adminFeePercent / 100) + fixedDeduction);
+          }, 0);
+
+          const profit = totalSales - totalHpp - totalAdminFee;
+          const profitSharingPercent = Number(franchise.profit_sharing_percent) || 0;
+          const profitSharing = profit > 0 ? (profit * profitSharingPercent / 100) : 0;
+
+          monthData[franchise.name] = profitSharing;
+        });
+
+        return monthData;
+      });
+
+      setMonthlyChartData(monthlyData);
+
+      // Calculate yearly totals per franchise for the table
+      const yearlyStats: FranchiseYearlyStats[] = franchises.map((franchise) => {
+        const franchiseSales = sales.filter(s => s.franchise_id === franchise.id);
+        const franchiseSettings = settings.find(s => s.franchise_id === franchise.id);
+
         const adminFeePercent = franchiseSettings?.admin_fee_percent || 5;
         const fixedDeduction = franchiseSettings?.fixed_deduction || 1000;
+
+        const totalSales = franchiseSales.reduce((sum, s) => sum + Number(s.total_sales), 0);
+        const totalHpp = franchiseSales.reduce((sum, s) => sum + Number(s.total_hpp), 0);
         const totalAdminFee = franchiseSales.reduce((sum, s) => {
           return sum + ((Number(s.total_sales) * adminFeePercent / 100) + fixedDeduction);
         }, 0);
-        
+
         const totalProfit = totalSales - totalHpp - totalAdminFee;
-        const profitSharingPercent = Number(franchise.profit_sharing_percent);
+        const profitSharingPercent = Number(franchise.profit_sharing_percent) || 0;
         const profitSharing = totalProfit > 0 ? (totalProfit * profitSharingPercent / 100) : 0;
 
         return {
@@ -128,7 +184,7 @@ export default function AdminDashboard() {
         };
       });
 
-      setFranchises(franchiseStats);
+      setFranchiseStats(yearlyStats);
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
     } finally {
@@ -137,7 +193,7 @@ export default function AdminDashboard() {
   };
 
   const totals = useMemo(() => {
-    return franchises.reduce(
+    return franchiseStats.reduce(
       (acc, f) => ({
         totalSales: acc.totalSales + f.totalSales,
         totalProfit: acc.totalProfit + f.totalProfit,
@@ -145,14 +201,13 @@ export default function AdminDashboard() {
       }),
       { totalSales: 0, totalProfit: 0, totalProfitSharing: 0 }
     );
-  }, [franchises]);
+  }, [franchiseStats]);
 
-  const chartData = useMemo(() => {
-    return franchises
-      .filter(f => f.totalSales > 0)
-      .sort((a, b) => b.totalSales - a.totalSales)
-      .slice(0, 10);
-  }, [franchises]);
+  const hasChartData = useMemo(() => {
+    return monthlyChartData.some(month => 
+      franchiseList.some(f => Number(month[f.name]) > 0)
+    );
+  }, [monthlyChartData, franchiseList]);
 
   if (loading) {
     return (
@@ -176,22 +231,12 @@ export default function AdminDashboard() {
             Dashboard Super Admin
           </h1>
           <p className="text-muted-foreground text-sm mt-1">
-            Ringkasan penjualan {months[selectedMonth - 1]} {selectedYear}
+            Ringkasan tahunan {selectedYear}
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Select value={selectedMonth.toString()} onValueChange={(v) => setSelectedMonth(parseInt(v))}>
-            <SelectTrigger className="w-[140px]">
-              <SelectValue placeholder="Bulan" />
-            </SelectTrigger>
-            <SelectContent>
-              {months.map((month, i) => (
-                <SelectItem key={i} value={(i + 1).toString()}>{month}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
           <Select value={selectedYear.toString()} onValueChange={(v) => setSelectedYear(parseInt(v))}>
-            <SelectTrigger className="w-[100px]">
+            <SelectTrigger className="w-[120px]">
               <SelectValue placeholder="Tahun" />
             </SelectTrigger>
             <SelectContent>
@@ -257,37 +302,34 @@ export default function AdminDashboard() {
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Franchise Aktif</p>
-                <p className="text-xl font-bold text-foreground">{franchises.length}</p>
+                <p className="text-xl font-bold text-foreground">{franchiseList.length}</p>
               </div>
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Chart */}
+      {/* Chart - Monthly Profit Sharing per Franchise */}
       <Card className="shadow-md border-border/50">
         <CardHeader className="py-4 px-5 border-b border-border/50">
-          <CardTitle className="text-base font-bold">Penjualan per Franchise</CardTitle>
+          <CardTitle className="text-base font-bold">Bagi Hasil per Franchise - Tahun {selectedYear}</CardTitle>
         </CardHeader>
         <CardContent className="pt-4">
-          {chartData.length > 0 ? (
-            <div className="h-[300px]">
+          {hasChartData ? (
+            <div className="h-[350px]">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={chartData} layout="vertical" margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-                  <CartesianGrid strokeDasharray="3 3" className="stroke-border/50" horizontal={true} vertical={false} />
+                <BarChart data={monthlyChartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-border/50" vertical={false} />
                   <XAxis 
-                    type="number" 
-                    tickFormatter={formatCompactCurrency}
+                    dataKey="month" 
                     tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }}
                   />
                   <YAxis 
-                    type="category" 
-                    dataKey="name" 
-                    width={100}
-                    tick={{ fill: 'hsl(var(--foreground))', fontSize: 11 }}
+                    tickFormatter={formatCompactCurrency}
+                    tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }}
                   />
                   <Tooltip 
-                    formatter={(value: number) => [formatCurrency(value), 'Penjualan']}
+                    formatter={(value: number, name: string) => [formatCurrency(value), name]}
                     contentStyle={{
                       backgroundColor: 'hsl(var(--card))',
                       border: '1px solid hsl(var(--border))',
@@ -295,27 +337,35 @@ export default function AdminDashboard() {
                       padding: '8px 12px',
                       fontSize: '12px',
                     }}
+                    labelStyle={{ fontWeight: 'bold', marginBottom: '4px' }}
                   />
-                  <Bar dataKey="totalSales" radius={[0, 4, 4, 0]}>
-                    {chartData.map((_, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    ))}
-                  </Bar>
+                  <Legend 
+                    wrapperStyle={{ paddingTop: '10px' }}
+                    iconType="circle"
+                  />
+                  {franchiseList.map((franchise, index) => (
+                    <Bar 
+                      key={franchise.id}
+                      dataKey={franchise.name}
+                      fill={COLORS[index % COLORS.length]}
+                      radius={[4, 4, 0, 0]}
+                    />
+                  ))}
                 </BarChart>
               </ResponsiveContainer>
             </div>
           ) : (
             <div className="h-[200px] flex items-center justify-center text-muted-foreground">
-              Belum ada data penjualan
+              Belum ada data bagi hasil
             </div>
           )}
         </CardContent>
       </Card>
 
-      {/* Top Franchises Table */}
+      {/* Yearly Franchise Summary Table */}
       <Card className="shadow-md border-border/50">
         <CardHeader className="py-4 px-5 border-b border-border/50">
-          <CardTitle className="text-base font-bold">Ringkasan per Franchise</CardTitle>
+          <CardTitle className="text-base font-bold">Ringkasan Tahunan per Franchise - {selectedYear}</CardTitle>
         </CardHeader>
         <CardContent className="p-0">
           <div className="overflow-x-auto">
@@ -323,21 +373,21 @@ export default function AdminDashboard() {
               <thead>
                 <tr className="bg-muted/30">
                   <th className="text-left px-4 py-3 font-medium text-muted-foreground text-sm">Franchise</th>
-                  <th className="text-right px-4 py-3 font-medium text-muted-foreground text-sm">Penjualan</th>
+                  <th className="text-right px-4 py-3 font-medium text-muted-foreground text-sm">Total Penjualan</th>
                   <th className="text-right px-4 py-3 font-medium text-muted-foreground text-sm">Laba Bersih</th>
                   <th className="text-right px-4 py-3 font-medium text-muted-foreground text-sm">% Bagi Hasil</th>
                   <th className="text-right px-4 py-3 font-medium text-muted-foreground text-sm">Bagi Hasil</th>
                 </tr>
               </thead>
               <tbody>
-                {franchises.length === 0 ? (
+                {franchiseStats.length === 0 ? (
                   <tr>
                     <td colSpan={5} className="text-center py-8 text-muted-foreground">
                       Belum ada franchise terdaftar
                     </td>
                   </tr>
                 ) : (
-                  franchises.map((franchise, index) => (
+                  franchiseStats.map((franchise, index) => (
                     <tr key={franchise.id} className="border-t border-border hover:bg-muted/20">
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-2">

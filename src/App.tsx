@@ -24,6 +24,7 @@ import NotFound from "./pages/NotFound";
 import AdminDashboard from "./pages/admin/Dashboard";
 import FranchiseManagement from "./pages/admin/FranchiseManagement";
 import ProfitSharingSettings from "./pages/admin/ProfitSharingSettings";
+import ProfitSharingPayments from "./pages/admin/ProfitSharingPayments";
 import GlobalReports from "./pages/admin/GlobalReports";
 
 const queryClient = new QueryClient();
@@ -54,6 +55,11 @@ function AppRoutes() {
       <Route path="/admin/profit-sharing" element={
         <AdminRoute>
           <AdminLayout><ProfitSharingSettings /></AdminLayout>
+        </AdminRoute>
+      } />
+      <Route path="/admin/profit-sharing-payments" element={
+        <AdminRoute>
+          <AdminLayout><ProfitSharingPayments /></AdminLayout>
         </AdminRoute>
       } />
       <Route path="/admin/reports" element={

@@ -9,7 +9,8 @@ import {
   X, 
   ShoppingBag,
   LogOut,
-  Shield
+  Shield,
+  Receipt
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/context/AuthContext';
@@ -23,6 +24,7 @@ const navItems = [
   { path: '/admin', label: 'Dashboard', icon: LayoutDashboard },
   { path: '/admin/franchises', label: 'Kelola Franchise', icon: Users },
   { path: '/admin/profit-sharing', label: 'Setting Bagi Hasil', icon: Percent },
+  { path: '/admin/profit-sharing-payments', label: 'Bagi Hasil Franchise', icon: Receipt },
   { path: '/admin/reports', label: 'Laporan Global', icon: FileBarChart },
 ];
 

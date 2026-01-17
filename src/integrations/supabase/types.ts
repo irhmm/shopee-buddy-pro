@@ -114,6 +114,59 @@ export type Database = {
           },
         ]
       }
+      profit_sharing_payments: {
+        Row: {
+          created_at: string | null
+          franchise_id: string
+          id: string
+          notes: string | null
+          paid_at: string | null
+          payment_status: string | null
+          period_month: number
+          period_year: number
+          profit_sharing_amount: number | null
+          profit_sharing_percent: number | null
+          total_revenue: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          franchise_id: string
+          id?: string
+          notes?: string | null
+          paid_at?: string | null
+          payment_status?: string | null
+          period_month: number
+          period_year: number
+          profit_sharing_amount?: number | null
+          profit_sharing_percent?: number | null
+          total_revenue?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          franchise_id?: string
+          id?: string
+          notes?: string | null
+          paid_at?: string | null
+          payment_status?: string | null
+          period_month?: number
+          period_year?: number
+          profit_sharing_amount?: number | null
+          profit_sharing_percent?: number | null
+          total_revenue?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profit_sharing_payments_franchise_id_fkey"
+            columns: ["franchise_id"]
+            isOneToOne: false
+            referencedRelation: "franchises"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sales: {
         Row: {
           created_at: string

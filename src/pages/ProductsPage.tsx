@@ -233,6 +233,7 @@ export default function ProductsPage() {
                     <th className="text-left px-4 py-3 font-medium text-foreground text-sm">Kode</th>
                     <th className="text-right px-4 py-3 font-medium text-foreground text-sm">HPP</th>
                     <th className="text-right px-4 py-3 font-medium text-foreground text-sm">Harga Jual</th>
+                    <th className="text-right px-4 py-3 font-medium text-foreground text-sm">Margin</th>
                     <th className="text-center px-4 py-3 font-medium text-foreground text-sm">Aksi</th>
                   </tr>
                 </thead>
@@ -255,6 +256,23 @@ export default function ProductsPage() {
                       </td>
                       <td className="px-4 py-3 text-right text-sm font-medium text-foreground">
                         {formatCurrency(product.price)}
+                      </td>
+                      <td className="px-4 py-3 text-right">
+                        {(() => {
+                          const margin = product.price > 0 
+                            ? ((product.price - product.hpp) / product.price) * 100 
+                            : 0;
+                          const colorClass = margin >= 20 
+                            ? 'text-green-600' 
+                            : margin >= 10 
+                              ? 'text-yellow-600' 
+                              : 'text-red-600';
+                          return (
+                            <span className={`text-sm font-medium ${colorClass}`}>
+                              {margin.toFixed(1)}%
+                            </span>
+                          );
+                        })()}
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex items-center justify-center gap-1">

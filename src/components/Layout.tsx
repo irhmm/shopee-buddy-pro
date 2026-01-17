@@ -8,9 +8,9 @@ interface LayoutProps {
 }
 
 const navItems = [
-  { path: '/', label: 'Add Produk', icon: Package },
+  { path: '/', label: 'Rekap Penjualan', icon: BarChart3 },
+  { path: '/products', label: 'Add Produk', icon: Package },
   { path: '/settings', label: 'Setting Biaya Admin', icon: Settings },
-  { path: '/sales', label: 'Rekap Penjualan', icon: BarChart3 },
 ];
 
 export function Layout({ children }: LayoutProps) {

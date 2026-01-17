@@ -23,9 +23,9 @@ const App: React.FC = () => {
           <BrowserRouter>
             <Layout>
               <Routes>
-                <Route path="/" element={<ProductsPage />} />
+                <Route path="/" element={<SalesPage />} />
+                <Route path="/products" element={<ProductsPage />} />
                 <Route path="/settings" element={<SettingsPage />} />
-                <Route path="/sales" element={<SalesPage />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </Layout>

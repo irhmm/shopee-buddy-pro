@@ -327,6 +327,29 @@ export default function LaporanKeuanganPage() {
         </CardContent>
       </Card>
 
+      {/* Info Bagi Hasil untuk Franchise */}
+      <Card className="bg-amber-50/50 dark:bg-amber-950/20 border-amber-200/50 dark:border-amber-800/50">
+        <CardContent className="p-4">
+          <div className="flex items-start gap-3">
+            <div className="p-2 rounded-lg bg-amber-100 dark:bg-amber-900/50">
+              <Info className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-foreground">
+                Informasi Bagi Hasil ke Super Admin
+              </p>
+              <p className="text-sm text-muted-foreground mt-1">
+                Bagi hasil dihitung dari <strong>Total Penjualan × Persentase Bagi Hasil</strong> yang telah ditetapkan.
+              </p>
+              <p className="text-xs text-muted-foreground/70 mt-1">
+                Perhitungan bagi hasil dilakukan berdasarkan total penjualan tanpa potongan HPP atau biaya lainnya. 
+                Untuk detail pembayaran bagi hasil, silakan hubungi Super Admin.
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Card Riwayat Bagi Hasil */}
       <Card className="shadow-md border-border/50 overflow-hidden">
         <CardHeader className="py-3 px-4 border-b border-border/50 bg-gradient-to-r from-primary/5 to-purple-500/5">
@@ -465,28 +488,6 @@ export default function LaporanKeuanganPage() {
         </CardContent>
       </Card>
 
-      {/* Info Bagi Hasil untuk Franchise */}
-      <Card className="bg-amber-50/50 dark:bg-amber-950/20 border-amber-200/50 dark:border-amber-800/50">
-        <CardContent className="p-4">
-          <div className="flex items-start gap-3">
-            <div className="p-2 rounded-lg bg-amber-100 dark:bg-amber-900/50">
-              <Info className="w-4 h-4 text-amber-600 dark:text-amber-400" />
-            </div>
-            <div>
-              <p className="text-sm font-medium text-foreground">
-                Informasi Bagi Hasil ke Super Admin
-              </p>
-              <p className="text-sm text-muted-foreground mt-1">
-                Bagi hasil dihitung dari <strong>Total Penjualan × Persentase Bagi Hasil</strong> yang telah ditetapkan.
-              </p>
-              <p className="text-xs text-muted-foreground/70 mt-1">
-                Perhitungan bagi hasil dilakukan berdasarkan total penjualan tanpa potongan HPP atau biaya lainnya. 
-                Untuk detail pembayaran bagi hasil, silakan hubungi Super Admin.
-              </p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
     </div>
   );
 }

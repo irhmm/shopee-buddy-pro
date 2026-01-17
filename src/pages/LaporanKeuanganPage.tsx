@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { useApp } from '@/context/AppContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { TrendingUp, TrendingDown, DollarSign, ShoppingCart, Wallet } from 'lucide-react';
+import { TrendingUp, TrendingDown, DollarSign, ShoppingCart, Wallet, Info } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { format } from 'date-fns';
@@ -363,6 +363,29 @@ export default function LaporanKeuanganPage() {
                 </TableRow>
               </TableBody>
             </Table>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Info Bagi Hasil untuk Franchise */}
+      <Card className="bg-amber-50/50 dark:bg-amber-950/20 border-amber-200/50 dark:border-amber-800/50">
+        <CardContent className="p-4">
+          <div className="flex items-start gap-3">
+            <div className="p-2 rounded-lg bg-amber-100 dark:bg-amber-900/50">
+              <Info className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-foreground">
+                Informasi Bagi Hasil ke Super Admin
+              </p>
+              <p className="text-sm text-muted-foreground mt-1">
+                Bagi hasil dihitung dari <strong>Total Penjualan × Persentase Bagi Hasil</strong> yang telah ditetapkan.
+              </p>
+              <p className="text-xs text-muted-foreground/70 mt-1">
+                Perhitungan bagi hasil dilakukan berdasarkan total penjualan tanpa potongan HPP atau biaya lainnya. 
+                Untuk detail pembayaran bagi hasil, silakan hubungi Super Admin.
+              </p>
+            </div>
           </div>
         </CardContent>
       </Card>

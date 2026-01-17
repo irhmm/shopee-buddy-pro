@@ -41,6 +41,7 @@ import {
   CheckCircle2,
   Clock,
   Calendar,
+  Info,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import * as XLSX from 'xlsx';
@@ -424,6 +425,28 @@ export default function ProfitSharingPayments() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Info Keterangan Rumus */}
+      <Card className="bg-blue-50/50 dark:bg-blue-950/20 border-blue-200/50 dark:border-blue-800/50">
+        <CardContent className="p-4">
+          <div className="flex items-start gap-3">
+            <div className="p-2 rounded-lg bg-blue-100 dark:bg-blue-900/50">
+              <Info className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-foreground">
+                Rumus Perhitungan Bagi Hasil
+              </p>
+              <p className="text-sm text-muted-foreground mt-1">
+                <strong>Bagi Hasil = Total Penjualan × Persentase Bagi Hasil</strong>
+              </p>
+              <p className="text-xs text-muted-foreground/70 mt-1">
+                Dihitung dari total penjualan tanpa dikurangi HPP, biaya admin, atau biaya lainnya.
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Filters & Actions */}
       <Card>

@@ -162,10 +162,13 @@ export default function ProfitSharingSettings() {
       <Card className="bg-primary/5 border-primary/20">
         <CardContent className="p-4">
           <p className="text-sm text-foreground">
-            <strong>Cara Perhitungan:</strong> Bagi Hasil = Laba Bersih Franchise × Persentase Bagi Hasil
+            <strong>Cara Perhitungan:</strong> Bagi Hasil = Total Penjualan × Persentase Bagi Hasil
           </p>
           <p className="text-sm text-muted-foreground mt-1">
-            Contoh: Jika laba bersih Rp 10.000.000 dan bagi hasil 10%, maka Super Admin mendapat Rp 1.000.000
+            Contoh: Jika total penjualan Rp 10.000.000 dan bagi hasil 10%, maka Super Admin mendapat Rp 1.000.000
+          </p>
+          <p className="text-xs text-muted-foreground/70 mt-2 italic">
+            * Bagi hasil dihitung dari total penjualan tanpa dikurangi HPP atau biaya lainnya
           </p>
         </CardContent>
       </Card>

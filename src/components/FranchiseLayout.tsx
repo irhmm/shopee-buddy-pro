@@ -9,7 +9,8 @@ import {
   ShoppingBag, 
   TrendingUp,
   LogOut,
-  Store
+  Store,
+  Wallet
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/context/AuthContext';
@@ -22,6 +23,7 @@ interface FranchiseLayoutProps {
 const navItems = [
   { path: '/laporan', label: 'Laporan Keuangan', icon: TrendingUp },
   { path: '/', label: 'Rekap Penjualan', icon: BarChart3 },
+  { path: '/pengeluaran', label: 'Pengeluaran', icon: Wallet },
   { path: '/products', label: 'Add Produk', icon: Package },
   { path: '/settings', label: 'Setting Biaya Admin', icon: Settings },
 ];

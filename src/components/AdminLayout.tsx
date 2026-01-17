@@ -12,7 +12,8 @@ import {
   Shield,
   Receipt,
   Package,
-  TrendingUp
+  TrendingUp,
+  Wallet
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/context/AuthContext';
@@ -27,6 +28,7 @@ const navItems = [
   { path: '/admin/product-performance', label: 'Performa Produk', icon: TrendingUp },
   { path: '/admin/profit-sharing-payments', label: 'Bagi Hasil Franchise', icon: Receipt },
   { path: '/admin/profit-sharing', label: 'Setting Bagi Hasil', icon: Percent },
+  { path: '/admin/expenditures', label: 'Pengeluaran Franchise', icon: Wallet },
   { path: '/admin/products', label: 'Produk Franchise', icon: Package },
   { path: '/admin/franchises', label: 'Kelola Franchise', icon: Users },
   { path: '/admin/reports', label: 'Laporan Global', icon: FileBarChart },

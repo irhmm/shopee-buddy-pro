@@ -896,17 +896,6 @@ export default function SalesPage() {
               </table>
             </div>
 
-            {/* Summary Footer */}
-            <div className="px-4 py-4 border-t border-border bg-secondary/30">
-              <div className="flex items-center justify-end">
-                <div className="text-right">
-                  <span className="text-sm text-muted-foreground">Laba Bersih ({selectedMonthLabel}):</span>
-                  <span className={`ml-2 text-lg font-bold ${totals.netProfit >= 0 ? 'text-success' : 'text-destructive'}`}>
-                    {formatCurrency(totals.netProfit)}
-                  </span>
-                </div>
-              </div>
-            </div>
 
             <div className="px-4 py-4 border-t border-border">
               <Pagination

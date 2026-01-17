@@ -78,6 +78,7 @@ export default function LaporanKeuanganPage() {
   
   // State untuk filter dan pagination Riwayat Bagi Hasil
   const [filterYearBagiHasil, setFilterYearBagiHasil] = useState<number | 'all'>('all');
+  const [filterStatusBagiHasil, setFilterStatusBagiHasil] = useState<'all' | 'paid' | 'unpaid'>('all');
   const [currentPageBagiHasil, setCurrentPageBagiHasil] = useState(1);
   const ITEMS_PER_PAGE_BAGI_HASIL = 6;
 
@@ -106,11 +107,24 @@ export default function LaporanKeuanganPage() {
     return years.sort((a, b) => b - a);
   }, [profitSharingPayments]);
 
-  // Filter data berdasarkan tahun
+  // Filter data berdasarkan tahun DAN status
   const filteredPayments = useMemo(() => {
-    if (filterYearBagiHasil === 'all') return profitSharingPayments;
-    return profitSharingPayments.filter(p => p.period_year === filterYearBagiHasil);
-  }, [profitSharingPayments, filterYearBagiHasil]);
+    let result = profitSharingPayments;
+    
+    // Filter by year
+    if (filterYearBagiHasil !== 'all') {
+      result = result.filter(p => p.period_year === filterYearBagiHasil);
+    }
+    
+    // Filter by status
+    if (filterStatusBagiHasil !== 'all') {
+      result = result.filter(p => 
+        filterStatusBagiHasil === 'paid' ? p.payment_status === 'paid' : p.payment_status !== 'paid'
+      );
+    }
+    
+    return result;
+  }, [profitSharingPayments, filterYearBagiHasil, filterStatusBagiHasil]);
 
   // Pagination
   const totalPagesBagiHasil = Math.ceil(filteredPayments.length / ITEMS_PER_PAGE_BAGI_HASIL);
@@ -122,7 +136,7 @@ export default function LaporanKeuanganPage() {
   // Reset halaman saat filter berubah
   useEffect(() => {
     setCurrentPageBagiHasil(1);
-  }, [filterYearBagiHasil]);
+  }, [filterYearBagiHasil, filterStatusBagiHasil]);
 
   // Get available years from sales data
   const availableYears = useMemo(() => {
@@ -383,7 +397,7 @@ export default function LaporanKeuanganPage() {
       {/* Card Riwayat Bagi Hasil */}
       <Card className="shadow-md border-border/50 overflow-hidden">
         <CardHeader className="py-3 px-4 border-b border-border/50 bg-gradient-to-r from-primary/5 to-purple-500/5">
-          <div className="flex items-center justify-between gap-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="flex items-center gap-2">
               <div className="p-2 rounded-lg bg-primary/10">
                 <Receipt className="w-4 h-4 text-primary" />
@@ -396,25 +410,43 @@ export default function LaporanKeuanganPage() {
               </div>
             </div>
             
-            {/* Filter Tahun */}
-            {availableYearsBagiHasil.length > 0 && (
+            {/* Filter Container */}
+            <div className="flex items-center gap-2">
+              {/* Filter Status */}
               <Select
-                value={filterYearBagiHasil.toString()}
-                onValueChange={(val) => setFilterYearBagiHasil(val === 'all' ? 'all' : parseInt(val))}
+                value={filterStatusBagiHasil}
+                onValueChange={(val) => setFilterStatusBagiHasil(val as 'all' | 'paid' | 'unpaid')}
               >
                 <SelectTrigger className="w-[130px] h-8 text-xs">
-                  <SelectValue placeholder="Filter Tahun" />
+                  <SelectValue placeholder="Filter Status" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Semua Tahun</SelectItem>
-                  {availableYearsBagiHasil.map(year => (
-                    <SelectItem key={year} value={year.toString()}>
-                      {year}
-                    </SelectItem>
-                  ))}
+                  <SelectItem value="all">Semua Status</SelectItem>
+                  <SelectItem value="paid">Lunas</SelectItem>
+                  <SelectItem value="unpaid">Belum Dibayar</SelectItem>
                 </SelectContent>
               </Select>
-            )}
+              
+              {/* Filter Tahun */}
+              {availableYearsBagiHasil.length > 0 && (
+                <Select
+                  value={filterYearBagiHasil.toString()}
+                  onValueChange={(val) => setFilterYearBagiHasil(val === 'all' ? 'all' : parseInt(val))}
+                >
+                  <SelectTrigger className="w-[120px] h-8 text-xs">
+                    <SelectValue placeholder="Filter Tahun" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Semua Tahun</SelectItem>
+                    {availableYearsBagiHasil.map(year => (
+                      <SelectItem key={year} value={year.toString()}>
+                        {year}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            </div>
           </div>
         </CardHeader>
         <CardContent className="p-0">
@@ -426,9 +458,9 @@ export default function LaporanKeuanganPage() {
             <div className="p-8 text-center text-muted-foreground">
               <Receipt className="w-12 h-12 mx-auto mb-3 opacity-30" />
               <p className="text-sm">
-                {filterYearBagiHasil === 'all' 
+                {filterYearBagiHasil === 'all' && filterStatusBagiHasil === 'all'
                   ? 'Belum ada data bagi hasil' 
-                  : `Tidak ada data bagi hasil untuk tahun ${filterYearBagiHasil}`}
+                  : `Tidak ada data bagi hasil dengan filter yang dipilih`}
               </p>
             </div>
           ) : (

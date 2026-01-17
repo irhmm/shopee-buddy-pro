@@ -17,10 +17,8 @@ export function Pagination({
   itemsPerPage,
   onPageChange 
 }: PaginationProps) {
-  if (totalPages <= 1) return null;
-
   // Calculate display range
-  const startItem = (currentPage - 1) * itemsPerPage + 1;
+  const startItem = totalItems === 0 ? 0 : (currentPage - 1) * itemsPerPage + 1;
   const endItem = Math.min(currentPage * itemsPerPage, totalItems);
 
   const pages = [];

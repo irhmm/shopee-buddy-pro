@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, Fragment } from 'react';
 import { useApp } from '@/context/AppContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -74,11 +74,91 @@ export default function SalesPage() {
     });
   }, [sales, selectedMonth]);
 
+  // Format date to Indonesian format
+  const formatDateIndonesian = (date: Date) => {
+    const day = date.getDate();
+    const month = MONTH_NAMES[date.getMonth()];
+    const year = date.getFullYear();
+    return `${day} ${month} ${year}`;
+  };
+
+  // Group sales by date
+  const groupedSalesByDate = useMemo(() => {
+    const groups: Record<string, {
+      date: Date;
+      dateString: string;
+      sales: typeof filteredSales;
+      totalOrders: number;
+      totalProfit: number;
+    }> = {};
+
+    filteredSales.forEach((sale) => {
+      const saleDate = new Date(sale.createdAt);
+      const dateKey = saleDate.toISOString().split('T')[0]; // "2026-01-17"
+      
+      if (!groups[dateKey]) {
+        groups[dateKey] = {
+          date: saleDate,
+          dateString: formatDateIndonesian(saleDate),
+          sales: [],
+          totalOrders: 0,
+          totalProfit: 0,
+        };
+      }
+      
+      groups[dateKey].sales.push(sale);
+      groups[dateKey].totalOrders += 1;
+      groups[dateKey].totalProfit += sale.netProfit;
+    });
+
+    // Sort by date descending (newest first)
+    return Object.values(groups).sort(
+      (a, b) => b.date.getTime() - a.date.getTime()
+    );
+  }, [filteredSales]);
+
   const totalPages = Math.ceil(filteredSales.length / ITEMS_PER_PAGE);
   const paginatedSales = filteredSales.slice(
     (currentPage - 1) * ITEMS_PER_PAGE,
     currentPage * ITEMS_PER_PAGE
   );
+
+  // Group paginated sales by date for display
+  const paginatedGroupedSales = useMemo(() => {
+    const groups: Record<string, {
+      date: Date;
+      dateString: string;
+      sales: typeof paginatedSales;
+      totalOrders: number;
+      totalProfit: number;
+    }> = {};
+
+    paginatedSales.forEach((sale) => {
+      const saleDate = new Date(sale.createdAt);
+      const dateKey = saleDate.toISOString().split('T')[0];
+      
+      if (!groups[dateKey]) {
+        // Find the full day stats from groupedSalesByDate
+        const fullDayStats = groupedSalesByDate.find(g => 
+          g.date.toISOString().split('T')[0] === dateKey
+        );
+        
+        groups[dateKey] = {
+          date: saleDate,
+          dateString: formatDateIndonesian(saleDate),
+          sales: [],
+          totalOrders: fullDayStats?.totalOrders || 0,
+          totalProfit: fullDayStats?.totalProfit || 0,
+        };
+      }
+      
+      groups[dateKey].sales.push(sale);
+    });
+
+    return Object.values(groups).sort(
+      (a, b) => b.date.getTime() - a.date.getTime()
+    );
+  }, [paginatedSales, groupedSalesByDate]);
 
   // Reset to page 1 when month changes
   const handleMonthChange = (month: string) => {
@@ -306,70 +386,97 @@ export default function SalesPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {paginatedSales.map((sale) => (
-                    <tr key={sale.id} className="border-t border-border hover:bg-secondary/30 transition-colors">
-                      <td className="px-4 py-3">
-                        <div>
-                          <p className="font-medium text-foreground">{sale.productName}</p>
-                          <p className="text-xs text-muted-foreground">{sale.productCode}</p>
-                        </div>
-                      </td>
-                      <td className="px-4 py-3 text-center">
-                        <span className="inline-flex items-center px-2 py-1 rounded-md bg-secondary text-sm font-medium">
-                          {sale.quantity}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-right text-sm font-medium text-foreground">
-                        {formatCurrency(sale.totalSales)}
-                      </td>
-                      <td className="px-4 py-3 text-right text-sm text-muted-foreground">
-                        {formatCurrency(sale.totalHpp)}
-                      </td>
-                      <td className="px-4 py-3 text-right text-sm text-destructive">
-                        -{formatCurrency(sale.totalAdminFee)}
-                      </td>
-                      <td className="px-4 py-3 text-right">
-                        <span
-                          className={`text-sm font-semibold ${
-                            sale.netProfit >= 0 ? 'text-success' : 'text-destructive'
-                          }`}
-                        >
-                          {formatCurrency(sale.netProfit)}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3">
-                        <div className="flex justify-center">
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
-                              >
-                                <Trash2 size={16} />
-                              </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>Hapus Penjualan?</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  Data penjualan ini akan dihapus permanen. Tindakan ini tidak dapat dibatalkan.
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>Batal</AlertDialogCancel>
-                                <AlertDialogAction
-                                  onClick={() => handleDeleteSale(sale.id)}
-                                  className="bg-destructive hover:bg-destructive/90"
-                                >
-                                  Hapus
-                                </AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
-                        </div>
-                      </td>
-                    </tr>
+                  {paginatedGroupedSales.map((group) => (
+                    <Fragment key={group.dateString}>
+                      {/* Daily Summary Header */}
+                      <tr className="bg-secondary/80 border-t-2 border-primary/20">
+                        <td colSpan={7} className="px-4 py-3">
+                          <div className="flex justify-between items-center">
+                            <div>
+                              <p className="font-bold text-foreground">{group.dateString}</p>
+                              <p className="text-sm text-muted-foreground">
+                                {group.totalOrders} transaksi
+                              </p>
+                            </div>
+                            <div className="text-right">
+                              <p className={`text-lg font-bold ${group.totalProfit >= 0 ? 'text-primary' : 'text-destructive'}`}>
+                                {formatCurrency(group.totalProfit)}
+                              </p>
+                              <p className="text-xs text-muted-foreground uppercase tracking-wide">
+                                Total Hari Ini
+                              </p>
+                            </div>
+                          </div>
+                        </td>
+                      </tr>
+                      
+                      {/* Daily Transactions */}
+                      {group.sales.map((sale) => (
+                        <tr key={sale.id} className="border-t border-border hover:bg-secondary/30 transition-colors">
+                          <td className="px-4 py-3">
+                            <div>
+                              <p className="font-medium text-foreground">{sale.productName}</p>
+                              <p className="text-xs text-muted-foreground">{sale.productCode}</p>
+                            </div>
+                          </td>
+                          <td className="px-4 py-3 text-center">
+                            <span className="inline-flex items-center px-2 py-1 rounded-md bg-secondary text-sm font-medium">
+                              {sale.quantity}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 text-right text-sm font-medium text-foreground">
+                            {formatCurrency(sale.totalSales)}
+                          </td>
+                          <td className="px-4 py-3 text-right text-sm text-muted-foreground">
+                            {formatCurrency(sale.totalHpp)}
+                          </td>
+                          <td className="px-4 py-3 text-right text-sm text-destructive">
+                            -{formatCurrency(sale.totalAdminFee)}
+                          </td>
+                          <td className="px-4 py-3 text-right">
+                            <span
+                              className={`text-sm font-semibold ${
+                                sale.netProfit >= 0 ? 'text-success' : 'text-destructive'
+                              }`}
+                            >
+                              {formatCurrency(sale.netProfit)}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3">
+                            <div className="flex justify-center">
+                              <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                  >
+                                    <Trash2 size={16} />
+                                  </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                  <AlertDialogHeader>
+                                    <AlertDialogTitle>Hapus Penjualan?</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                      Data penjualan ini akan dihapus permanen. Tindakan ini tidak dapat dibatalkan.
+                                    </AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                    <AlertDialogCancel>Batal</AlertDialogCancel>
+                                    <AlertDialogAction
+                                      onClick={() => handleDeleteSale(sale.id)}
+                                      className="bg-destructive hover:bg-destructive/90"
+                                    >
+                                      Hapus
+                                    </AlertDialogAction>
+                                  </AlertDialogFooter>
+                                </AlertDialogContent>
+                              </AlertDialog>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </Fragment>
                   ))}
                 </tbody>
               </table>

@@ -47,18 +47,18 @@ const formatCompactCurrency = (value: number) => {
 
 // Custom Legend Component
 const CustomLegend = () => (
-  <div className="flex flex-wrap justify-center gap-4 mt-6">
-    <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-500/10 border border-emerald-500/20">
-      <div className="w-3 h-3 rounded-full bg-emerald-500" />
-      <span className="text-sm font-medium text-emerald-600 dark:text-emerald-400">Penjualan</span>
+  <div className="flex flex-wrap justify-center gap-3 mt-4">
+    <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20">
+      <div className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
+      <span className="text-xs font-medium text-emerald-600 dark:text-emerald-400">Penjualan</span>
     </div>
-    <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-blue-500/10 border border-blue-500/20">
-      <div className="w-3 h-3 rounded-full bg-blue-500" />
-      <span className="text-sm font-medium text-blue-600 dark:text-blue-400">Laba Bersih</span>
+    <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-blue-500/10 border border-blue-500/20">
+      <div className="w-2.5 h-2.5 rounded-full bg-blue-500" />
+      <span className="text-xs font-medium text-blue-600 dark:text-blue-400">Laba Bersih</span>
     </div>
-    <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-amber-500/10 border border-amber-500/20">
-      <div className="w-3 h-3 rounded-full bg-amber-500" />
-      <span className="text-sm font-medium text-amber-600 dark:text-amber-400">Pengeluaran</span>
+    <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/20">
+      <div className="w-2.5 h-2.5 rounded-full bg-amber-500" />
+      <span className="text-xs font-medium text-amber-600 dark:text-amber-400">Pengeluaran</span>
     </div>
   </div>
 );
@@ -165,22 +165,22 @@ export default function LaporanKeuanganPage() {
   }, [monthlyData]);
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       {/* Header with Gradient Background */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-primary/5 via-background to-emerald-500/5 border border-border/50 p-6 md:p-8">
+      <div className="relative overflow-hidden rounded-xl bg-gradient-to-r from-primary/5 via-background to-emerald-500/5 border border-border/50 p-4 md:p-5">
         <div className="absolute inset-0 bg-grid-pattern opacity-5" />
-        <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div>
-            <h1 className="text-2xl md:text-3xl font-bold text-foreground flex items-center gap-3">
-              <span className="text-3xl">📊</span>
+            <h1 className="text-xl md:text-2xl font-bold text-foreground flex items-center gap-2">
+              <span className="text-2xl">📊</span>
               Laporan Keuangan
             </h1>
-            <p className="text-muted-foreground text-sm mt-2">
+            <p className="text-muted-foreground text-xs mt-1">
               Ringkasan keuangan bulan {format(new Date(), 'MMMM yyyy', { locale: id })}
             </p>
           </div>
           <Select value={selectedYear.toString()} onValueChange={(v) => setSelectedYear(parseInt(v))}>
-            <SelectTrigger className="w-[140px] bg-background/80 backdrop-blur-sm border-border/50 shadow-sm">
+            <SelectTrigger className="w-[120px] h-9 text-sm bg-background/80 backdrop-blur-sm border-border/50 shadow-sm">
               <SelectValue placeholder="Pilih Tahun" />
             </SelectTrigger>
             <SelectContent>
@@ -193,7 +193,7 @@ export default function LaporanKeuanganPage() {
       </div>
 
       {/* Summary Cards with Glass Effect */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {summaryCards.map((card) => {
           const Icon = card.icon;
           const isPositive = card.invertTrend ? card.percentChange <= 0 : card.percentChange >= 0;
@@ -202,28 +202,28 @@ export default function LaporanKeuanganPage() {
           return (
             <Card 
               key={card.title} 
-              className={`relative overflow-hidden backdrop-blur-sm bg-gradient-to-br ${card.gradientFrom} ${card.gradientTo} border ${card.borderColor} shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1`}
+              className={`relative overflow-hidden backdrop-blur-sm bg-gradient-to-br ${card.gradientFrom} ${card.gradientTo} border ${card.borderColor} shadow-md hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5`}
             >
               {/* Decorative background element */}
-              <div className={`absolute -right-8 -top-8 w-32 h-32 rounded-full ${card.bgColor} blur-2xl opacity-50`} />
+              <div className={`absolute -right-6 -top-6 w-24 h-24 rounded-full ${card.bgColor} blur-2xl opacity-50`} />
               
-              <CardContent className="relative p-6">
+              <CardContent className="relative p-4">
                 <div className="flex items-start justify-between">
-                  <div className="space-y-3">
-                    <div className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold ${
+                  <div className="space-y-2">
+                    <div className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold ${
                       isPositive ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400' : 'bg-red-500/15 text-red-600 dark:text-red-400'
                     }`}>
-                      <TrendIcon className="w-3.5 h-3.5" />
+                      <TrendIcon className="w-3 h-3" />
                       <span>{card.percentChange >= 0 ? '+' : ''}{card.percentChange.toFixed(1)}%</span>
                     </div>
-                    <p className="text-sm font-medium text-muted-foreground">{card.title}</p>
-                    <p className={`text-2xl md:text-3xl font-bold ${card.color}`}>
+                    <p className="text-xs font-medium text-muted-foreground">{card.title}</p>
+                    <p className={`text-xl md:text-2xl font-bold ${card.color}`}>
                       {formatCurrency(card.value)}
                     </p>
-                    <p className="text-xs text-muted-foreground/80">dibanding bulan lalu</p>
+                    <p className="text-[10px] text-muted-foreground/80">dibanding bulan lalu</p>
                   </div>
-                  <div className={`p-4 rounded-2xl ${card.bgColor} shadow-inner`}>
-                    <Icon className={`w-7 h-7 ${card.color}`} />
+                  <div className={`p-3 rounded-xl ${card.bgColor} shadow-inner`}>
+                    <Icon className={`w-5 h-5 ${card.color}`} />
                   </div>
                 </div>
               </CardContent>
@@ -233,62 +233,64 @@ export default function LaporanKeuanganPage() {
       </div>
 
       {/* Bar Chart with Enhanced Styling */}
-      <Card className="shadow-lg border-border/50 overflow-hidden">
+      <Card className="shadow-md border-border/50 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-b from-transparent to-muted/5" />
-        <CardHeader className="relative flex flex-row items-center justify-between pb-2 border-b border-border/50 bg-muted/30">
+        <CardHeader className="relative flex flex-row items-center justify-between py-3 px-4 border-b border-border/50 bg-muted/30">
           <div>
-            <CardTitle className="text-xl font-bold">Grafik Bulanan</CardTitle>
-            <p className="text-sm text-muted-foreground mt-1">
+            <CardTitle className="text-base font-bold">Grafik Bulanan</CardTitle>
+            <p className="text-xs text-muted-foreground mt-0.5">
               Perbandingan data keuangan per bulan tahun {selectedYear}
             </p>
           </div>
         </CardHeader>
-        <CardContent className="relative pt-6">
-          <div className="h-[400px] w-full">
+        <CardContent className="relative pt-4 px-4 pb-4">
+          <div className="h-[280px] w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={monthlyData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+              <BarChart data={monthlyData} margin={{ top: 10, right: 20, left: 10, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" className="stroke-border/50" vertical={false} />
                 <XAxis 
                   dataKey="month" 
-                  tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }}
+                  tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 10 }}
                   axisLine={{ stroke: 'hsl(var(--border))' }}
                   tickLine={false}
                 />
                 <YAxis 
                   tickFormatter={formatCompactCurrency}
-                  tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }}
+                  tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 10 }}
                   axisLine={false}
                   tickLine={false}
+                  width={45}
                 />
                 <Tooltip 
                   formatter={(value: number, name: string) => [formatCurrency(value), name]}
                   contentStyle={{
                     backgroundColor: 'hsl(var(--card))',
                     border: '1px solid hsl(var(--border))',
-                    borderRadius: '12px',
-                    boxShadow: '0 10px 40px -10px rgba(0, 0, 0, 0.2)',
-                    padding: '12px 16px',
+                    borderRadius: '8px',
+                    boxShadow: '0 4px 20px -4px rgba(0, 0, 0, 0.15)',
+                    padding: '8px 12px',
+                    fontSize: '12px',
                   }}
-                  labelStyle={{ color: 'hsl(var(--foreground))', fontWeight: 600, marginBottom: '8px' }}
+                  labelStyle={{ color: 'hsl(var(--foreground))', fontWeight: 600, marginBottom: '4px', fontSize: '12px' }}
                   cursor={{ fill: 'hsl(var(--muted))', opacity: 0.3 }}
                 />
                 <Bar 
                   dataKey="penjualan" 
                   name="Penjualan" 
                   fill={COLORS.penjualan}
-                  radius={[6, 6, 0, 0]}
+                  radius={[4, 4, 0, 0]}
                 />
                 <Bar 
                   dataKey="labaBersih" 
                   name="Laba Bersih" 
                   fill={COLORS.labaBersih}
-                  radius={[6, 6, 0, 0]}
+                  radius={[4, 4, 0, 0]}
                 />
                 <Bar 
                   dataKey="pengeluaran" 
                   name="Pengeluaran" 
                   fill={COLORS.pengeluaran}
-                  radius={[6, 6, 0, 0]}
+                  radius={[4, 4, 0, 0]}
                 />
               </BarChart>
             </ResponsiveContainer>
@@ -298,22 +300,22 @@ export default function LaporanKeuanganPage() {
           <CustomLegend />
 
           {/* Yearly Summary with Themed Cards */}
-          <div className="mt-8 pt-6 border-t border-border/50">
-            <h3 className="text-sm font-semibold text-muted-foreground mb-4 text-center">
+          <div className="mt-5 pt-4 border-t border-border/50">
+            <h3 className="text-xs font-semibold text-muted-foreground mb-3 text-center">
               Total Keseluruhan Tahun {selectedYear}
             </h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="p-5 rounded-xl bg-gradient-to-br from-emerald-500/10 to-emerald-600/5 border border-emerald-500/20 text-center">
-                <p className="text-sm text-emerald-600 dark:text-emerald-400 font-medium mb-1">Total Penjualan</p>
-                <p className="text-xl md:text-2xl font-bold text-emerald-600 dark:text-emerald-400">{formatCurrency(yearlyTotals.penjualan)}</p>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <div className="p-3 rounded-lg bg-gradient-to-br from-emerald-500/10 to-emerald-600/5 border border-emerald-500/20 text-center">
+                <p className="text-xs text-emerald-600 dark:text-emerald-400 font-medium mb-0.5">Total Penjualan</p>
+                <p className="text-lg md:text-xl font-bold text-emerald-600 dark:text-emerald-400">{formatCurrency(yearlyTotals.penjualan)}</p>
               </div>
-              <div className="p-5 rounded-xl bg-gradient-to-br from-blue-500/10 to-blue-600/5 border border-blue-500/20 text-center">
-                <p className="text-sm text-blue-600 dark:text-blue-400 font-medium mb-1">Total Laba Bersih</p>
-                <p className="text-xl md:text-2xl font-bold text-blue-600 dark:text-blue-400">{formatCurrency(yearlyTotals.labaBersih)}</p>
+              <div className="p-3 rounded-lg bg-gradient-to-br from-blue-500/10 to-blue-600/5 border border-blue-500/20 text-center">
+                <p className="text-xs text-blue-600 dark:text-blue-400 font-medium mb-0.5">Total Laba Bersih</p>
+                <p className="text-lg md:text-xl font-bold text-blue-600 dark:text-blue-400">{formatCurrency(yearlyTotals.labaBersih)}</p>
               </div>
-              <div className="p-5 rounded-xl bg-gradient-to-br from-amber-500/10 to-amber-600/5 border border-amber-500/20 text-center">
-                <p className="text-sm text-amber-600 dark:text-amber-400 font-medium mb-1">Total Pengeluaran</p>
-                <p className="text-xl md:text-2xl font-bold text-amber-600 dark:text-amber-400">{formatCurrency(yearlyTotals.pengeluaran)}</p>
+              <div className="p-3 rounded-lg bg-gradient-to-br from-amber-500/10 to-amber-600/5 border border-amber-500/20 text-center">
+                <p className="text-xs text-amber-600 dark:text-amber-400 font-medium mb-0.5">Total Pengeluaran</p>
+                <p className="text-lg md:text-xl font-bold text-amber-600 dark:text-amber-400">{formatCurrency(yearlyTotals.pengeluaran)}</p>
               </div>
             </div>
           </div>

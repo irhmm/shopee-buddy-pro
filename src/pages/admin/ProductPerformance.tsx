@@ -20,8 +20,13 @@ import {
   BarChart3,
   Medal
 } from 'lucide-react';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend } from 'recharts';
 import * as XLSX from 'xlsx';
+
+interface MonthlyProductData {
+  month: string;
+  [productName: string]: string | number;
+}
 
 interface ProductRanking {
   productName: string;
@@ -80,6 +85,8 @@ export default function ProductPerformance() {
   const [previousMonthData, setPreviousMonthData] = useState<ProductRanking[]>([]);
   const [franchises, setFranchises] = useState<{ id: string; name: string }[]>([]);
   const [loading, setLoading] = useState(true);
+  const [monthlyTrendData, setMonthlyTrendData] = useState<MonthlyProductData[]>([]);
+  const [topProductNames, setTopProductNames] = useState<string[]>([]);
 
   // Search & Pagination
   const [searchProduct, setSearchProduct] = useState('');
@@ -219,6 +226,74 @@ export default function ProductPerformance() {
 
       setPreviousMonthData(prevRanked);
 
+      // Fetch 12 months trend data for line chart
+      const endDateTrend = endOfMonth(new Date(selectedYear, selectedMonth - 1));
+      const startDateTrend = startOfMonth(subMonths(endDateTrend, 11));
+
+      let trendSalesQuery = supabase
+        .from('sales')
+        .select('product_name, product_code, quantity, created_at, franchise_id')
+        .gte('created_at', startDateTrend.toISOString())
+        .lte('created_at', endDateTrend.toISOString());
+
+      if (selectedFranchise !== 'all') {
+        trendSalesQuery = trendSalesQuery.eq('franchise_id', selectedFranchise);
+      }
+
+      const { data: trendSalesData } = await trendSalesQuery;
+
+      // Aggregate by product across all 12 months to find top 5
+      const productTotals: Record<string, { name: string; total: number }> = {};
+      (trendSalesData || []).forEach(sale => {
+        const key = sale.product_name;
+        if (!productTotals[key]) {
+          productTotals[key] = { name: sale.product_name, total: 0 };
+        }
+        productTotals[key].total += sale.quantity;
+      });
+
+      // Get top 5 product names
+      const top5Products = Object.values(productTotals)
+        .sort((a, b) => b.total - a.total)
+        .slice(0, 5)
+        .map(p => p.name);
+
+      setTopProductNames(top5Products);
+
+      // Build monthly data for each of the 12 months
+      const monthlyData: MonthlyProductData[] = [];
+      for (let i = 11; i >= 0; i--) {
+        const monthDate = subMonths(endDateTrend, i);
+        const monthStart = startOfMonth(monthDate);
+        const monthEnd = endOfMonth(monthDate);
+        const monthLabel = format(monthDate, 'MMM yy', { locale: localeId });
+
+        // Filter sales for this month
+        const monthSales = (trendSalesData || []).filter(sale => {
+          const saleDate = new Date(sale.created_at);
+          return saleDate >= monthStart && saleDate <= monthEnd;
+        });
+
+        // Aggregate by product for this month
+        const monthAgg: Record<string, number> = {};
+        monthSales.forEach(sale => {
+          if (!monthAgg[sale.product_name]) {
+            monthAgg[sale.product_name] = 0;
+          }
+          monthAgg[sale.product_name] += sale.quantity;
+        });
+
+        // Create data point with top 5 products
+        const dataPoint: MonthlyProductData = { month: monthLabel };
+        top5Products.forEach(productName => {
+          dataPoint[productName] = monthAgg[productName] || 0;
+        });
+
+        monthlyData.push(dataPoint);
+      }
+
+      setMonthlyTrendData(monthlyData);
+
     } catch (error) {
       console.error('Error fetching data:', error);
     } finally {
@@ -311,13 +386,13 @@ export default function ProductPerformance() {
     XLSX.writeFile(wb, `Performa_Produk_${MONTHS[selectedMonth - 1].label}_${selectedYear}.xlsx`);
   };
 
-  // Chart colors
-  const chartColors = [
-    'hsl(var(--primary))',
-    'hsl(var(--chart-2))',
-    'hsl(var(--chart-3))',
-    'hsl(var(--chart-4))',
-    'hsl(var(--chart-5))',
+  // Line chart colors
+  const lineColors = [
+    '#ef4444', // red
+    '#22c55e', // green
+    '#f97316', // orange
+    '#3b82f6', // blue
+    '#a855f7', // purple
   ];
 
   const getRankBadge = (rank: number) => {
@@ -475,44 +550,60 @@ export default function ProductPerformance() {
         </Card>
       </div>
 
-      {/* Chart */}
+      {/* Line Chart - 12 Month Trend */}
       <Card>
         <CardHeader className="pb-2">
           <CardTitle className="text-base font-bold flex items-center gap-2">
             <Medal className="w-5 h-5 text-primary" />
-            Grafik Top {topN} Produk Terlaris
+            Grafik Trend Penjualan Produk (12 Bulan Terakhir)
           </CardTitle>
+          <p className="text-sm text-muted-foreground">
+            Trend penjualan 5 produk terlaris dalam 12 bulan terakhir
+          </p>
         </CardHeader>
         <CardContent>
-          {topProducts.length > 0 ? (
+          {monthlyTrendData.length > 0 && topProductNames.length > 0 ? (
             <div className="h-[300px] md:h-[400px]">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart
-                  data={topProducts}
-                  layout="vertical"
-                  margin={{ top: 10, right: 30, left: 0, bottom: 10 }}
+                <LineChart
+                  data={monthlyTrendData}
+                  margin={{ top: 20, right: 30, left: 0, bottom: 10 }}
                 >
-                  <XAxis type="number" />
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                  <XAxis 
+                    dataKey="month" 
+                    tick={{ fontSize: 11 }}
+                    stroke="hsl(var(--muted-foreground))"
+                  />
                   <YAxis 
-                    type="category" 
-                    dataKey="productName" 
-                    width={120}
-                    tick={{ fontSize: 12 }}
+                    tick={{ fontSize: 11 }}
+                    stroke="hsl(var(--muted-foreground))"
+                    tickFormatter={(value) => 
+                      value >= 1000 ? `${(value / 1000).toFixed(0)}K` : value.toString()
+                    }
                   />
                   <Tooltip
-                    formatter={(value: number) => [`${value} unit`, 'Qty Terjual']}
+                    formatter={(value: number, name: string) => [`${value} unit`, name]}
                     contentStyle={{
                       backgroundColor: 'hsl(var(--card))',
                       border: '1px solid hsl(var(--border))',
                       borderRadius: '8px',
                     }}
+                    labelStyle={{ fontWeight: 'bold' }}
                   />
-                  <Bar dataKey="totalQuantity" radius={[0, 4, 4, 0]}>
-                    {topProducts.map((_, index) => (
-                      <Cell key={index} fill={chartColors[index % chartColors.length]} />
-                    ))}
-                  </Bar>
-                </BarChart>
+                  <Legend />
+                  {topProductNames.map((productName, index) => (
+                    <Line
+                      key={productName}
+                      type="monotone"
+                      dataKey={productName}
+                      stroke={lineColors[index]}
+                      strokeWidth={2}
+                      dot={{ fill: lineColors[index], strokeWidth: 2, r: 4 }}
+                      activeDot={{ r: 6 }}
+                    />
+                  ))}
+                </LineChart>
               </ResponsiveContainer>
             </div>
           ) : (

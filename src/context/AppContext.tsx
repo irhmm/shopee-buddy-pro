@@ -46,6 +46,7 @@ interface AppContextType {
   updateSettings: (settings: AdminSettings) => Promise<void>;
   sales: SaleRecord[];
   addSale: (productId: string, quantity: number, saleDate?: Date) => Promise<void>;
+  updateSale: (id: string, productId: string, quantity: number, saleDate: Date) => Promise<void>;
   deleteSale: (id: string) => Promise<void>;
   loading: boolean;
   refreshData: () => Promise<void>;
@@ -259,6 +260,41 @@ export function AppProvider({ children }: { children: ReactNode }) {
     await fetchSales();
   };
 
+  const updateSale = async (id: string, productId: string, quantity: number, saleDate: Date) => {
+    const product = products.find((p) => p.id === productId);
+    if (!product) {
+      toast.error('Produk tidak ditemukan');
+      return;
+    }
+
+    const totalSales = product.price * quantity;
+    const totalHpp = product.hpp * quantity;
+
+    const { error } = await supabase
+      .from('sales')
+      .update({
+        product_id: productId,
+        product_name: product.name,
+        product_code: product.code,
+        quantity,
+        price_per_unit: product.price,
+        hpp_per_unit: product.hpp,
+        total_sales: totalSales,
+        total_hpp: totalHpp,
+        created_at: saleDate.toISOString(),
+      })
+      .eq('id', id);
+
+    if (error) {
+      console.error('Error updating sale:', error);
+      toast.error('Gagal mengupdate penjualan');
+      return;
+    }
+
+    await fetchSales();
+    toast.success('Penjualan berhasil diperbarui');
+  };
+
   const deleteSale = async (id: string) => {
     const { error } = await supabase.from('sales').delete().eq('id', id);
 
@@ -283,6 +319,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         updateSettings,
         sales,
         addSale,
+        updateSale,
         deleteSale,
         loading,
         refreshData,

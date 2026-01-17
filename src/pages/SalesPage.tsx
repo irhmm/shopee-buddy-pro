@@ -468,7 +468,21 @@ export default function SalesPage() {
       </div>
 
       {/* Action Buttons: Filter, Export, Add */}
-      <div className="mb-6 flex justify-end gap-2">
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
+        {/* Left side - Transaction Info */}
+        <div className="flex flex-wrap items-center gap-4 text-sm">
+          <div>
+            <span className="text-muted-foreground">Transaksi ({selectedMonthLabel}):</span>
+            <span className="ml-2 font-semibold text-foreground">{filteredSales.length}</span>
+          </div>
+          <div>
+            <span className="text-muted-foreground">Admin Fee:</span>
+            <span className="ml-2 font-semibold text-foreground">{settings.adminFeePercent}% + {formatCurrency(settings.fixedDeduction)}</span>
+          </div>
+        </div>
+
+        {/* Right side - Action Buttons */}
+        <div className="flex items-center gap-2">
         {/* Filter Button */}
         <Popover open={isFilterOpen} onOpenChange={setIsFilterOpen}>
           <PopoverTrigger asChild>
@@ -744,6 +758,7 @@ export default function SalesPage() {
             </form>
           </DialogContent>
         </Dialog>
+        </div>
       </div>
 
       {/* Sales Table */}
@@ -883,17 +898,7 @@ export default function SalesPage() {
 
             {/* Summary Footer */}
             <div className="px-4 py-4 border-t border-border bg-secondary/30">
-              <div className="flex flex-wrap items-center justify-between gap-4">
-                <div className="flex flex-wrap gap-6 text-sm">
-                  <div>
-                    <span className="text-muted-foreground">Transaksi ({selectedMonthLabel}):</span>
-                    <span className="ml-2 font-semibold text-foreground">{filteredSales.length}</span>
-                  </div>
-                  <div>
-                    <span className="text-muted-foreground">Admin Fee:</span>
-                    <span className="ml-2 font-semibold text-foreground">{settings.adminFeePercent}% + {formatCurrency(settings.fixedDeduction)}</span>
-                  </div>
-                </div>
+              <div className="flex items-center justify-end">
                 <div className="text-right">
                   <span className="text-sm text-muted-foreground">Laba Bersih ({selectedMonthLabel}):</span>
                   <span className={`ml-2 text-lg font-bold ${totals.netProfit >= 0 ? 'text-success' : 'text-destructive'}`}>

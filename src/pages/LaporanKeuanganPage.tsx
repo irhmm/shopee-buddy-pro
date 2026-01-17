@@ -1,10 +1,11 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { useApp } from '@/context/AppContext';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Pagination } from '@/components/Pagination';
 import { Badge } from '@/components/ui/badge';
 import { TrendingUp, TrendingDown, DollarSign, ShoppingCart, Wallet, Info, CheckCircle2, Clock, Receipt } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
@@ -74,6 +75,11 @@ export default function LaporanKeuanganPage() {
   const { franchiseId } = useAuth();
   const currentYear = new Date().getFullYear();
   const [selectedYear, setSelectedYear] = useState(currentYear);
+  
+  // State untuk filter dan pagination Riwayat Bagi Hasil
+  const [filterYearBagiHasil, setFilterYearBagiHasil] = useState<number | 'all'>('all');
+  const [currentPageBagiHasil, setCurrentPageBagiHasil] = useState(1);
+  const ITEMS_PER_PAGE_BAGI_HASIL = 6;
 
   // Fetch profit sharing payments
   const { data: profitSharingPayments = [], isLoading: isLoadingPayments } = useQuery({
@@ -93,6 +99,30 @@ export default function LaporanKeuanganPage() {
     },
     enabled: !!franchiseId,
   });
+
+  // Hitung tahun yang tersedia dari data profit sharing
+  const availableYearsBagiHasil = useMemo(() => {
+    const years = [...new Set(profitSharingPayments.map(p => p.period_year))];
+    return years.sort((a, b) => b - a);
+  }, [profitSharingPayments]);
+
+  // Filter data berdasarkan tahun
+  const filteredPayments = useMemo(() => {
+    if (filterYearBagiHasil === 'all') return profitSharingPayments;
+    return profitSharingPayments.filter(p => p.period_year === filterYearBagiHasil);
+  }, [profitSharingPayments, filterYearBagiHasil]);
+
+  // Pagination
+  const totalPagesBagiHasil = Math.ceil(filteredPayments.length / ITEMS_PER_PAGE_BAGI_HASIL);
+  const paginatedPayments = useMemo(() => {
+    const start = (currentPageBagiHasil - 1) * ITEMS_PER_PAGE_BAGI_HASIL;
+    return filteredPayments.slice(start, start + ITEMS_PER_PAGE_BAGI_HASIL);
+  }, [filteredPayments, currentPageBagiHasil, ITEMS_PER_PAGE_BAGI_HASIL]);
+
+  // Reset halaman saat filter berubah
+  useEffect(() => {
+    setCurrentPageBagiHasil(1);
+  }, [filterYearBagiHasil]);
 
   // Get available years from sales data
   const availableYears = useMemo(() => {
@@ -353,16 +383,38 @@ export default function LaporanKeuanganPage() {
       {/* Card Riwayat Bagi Hasil */}
       <Card className="shadow-md border-border/50 overflow-hidden">
         <CardHeader className="py-3 px-4 border-b border-border/50 bg-gradient-to-r from-primary/5 to-purple-500/5">
-          <div className="flex items-center gap-2">
-            <div className="p-2 rounded-lg bg-primary/10">
-              <Receipt className="w-4 h-4 text-primary" />
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-2">
+              <div className="p-2 rounded-lg bg-primary/10">
+                <Receipt className="w-4 h-4 text-primary" />
+              </div>
+              <div>
+                <CardTitle className="text-base font-bold">Riwayat Bagi Hasil</CardTitle>
+                <p className="text-xs text-muted-foreground">
+                  Status pembayaran bagi hasil ke Super Admin
+                </p>
+              </div>
             </div>
-            <div>
-              <CardTitle className="text-base font-bold">Riwayat Bagi Hasil</CardTitle>
-              <p className="text-xs text-muted-foreground">
-                Status pembayaran bagi hasil ke Super Admin
-              </p>
-            </div>
+            
+            {/* Filter Tahun */}
+            {availableYearsBagiHasil.length > 0 && (
+              <Select
+                value={filterYearBagiHasil.toString()}
+                onValueChange={(val) => setFilterYearBagiHasil(val === 'all' ? 'all' : parseInt(val))}
+              >
+                <SelectTrigger className="w-[130px] h-8 text-xs">
+                  <SelectValue placeholder="Filter Tahun" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Semua Tahun</SelectItem>
+                  {availableYearsBagiHasil.map(year => (
+                    <SelectItem key={year} value={year.toString()}>
+                      {year}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
           </div>
         </CardHeader>
         <CardContent className="p-0">
@@ -370,56 +422,75 @@ export default function LaporanKeuanganPage() {
             <div className="p-8 text-center text-muted-foreground">
               Memuat data...
             </div>
-          ) : profitSharingPayments.length === 0 ? (
+          ) : filteredPayments.length === 0 ? (
             <div className="p-8 text-center text-muted-foreground">
               <Receipt className="w-12 h-12 mx-auto mb-3 opacity-30" />
-              <p className="text-sm">Belum ada data bagi hasil</p>
+              <p className="text-sm">
+                {filterYearBagiHasil === 'all' 
+                  ? 'Belum ada data bagi hasil' 
+                  : `Tidak ada data bagi hasil untuk tahun ${filterYearBagiHasil}`}
+              </p>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow className="bg-muted/20 hover:bg-muted/20">
-                    <TableHead className="text-xs font-semibold">Periode</TableHead>
-                    <TableHead className="text-xs font-semibold text-right">Total Penjualan</TableHead>
-                    <TableHead className="text-xs font-semibold text-center">%</TableHead>
-                    <TableHead className="text-xs font-semibold text-right">Bagi Hasil</TableHead>
-                    <TableHead className="text-xs font-semibold text-center">Status</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {profitSharingPayments.map((payment) => (
-                    <TableRow key={payment.id} className="hover:bg-muted/10">
-                      <TableCell className="text-sm font-medium">
-                        {MONTHS_FULL[payment.period_month - 1]} {payment.period_year}
-                      </TableCell>
-                      <TableCell className="text-sm text-right">
-                        {formatCurrency(payment.total_revenue || 0)}
-                      </TableCell>
-                      <TableCell className="text-sm text-center text-muted-foreground">
-                        {payment.profit_sharing_percent}%
-                      </TableCell>
-                      <TableCell className="text-sm text-right font-semibold text-primary">
-                        {formatCurrency(payment.profit_sharing_amount || 0)}
-                      </TableCell>
-                      <TableCell className="text-center">
-                        {payment.payment_status === 'paid' ? (
-                          <Badge variant="outline" className="bg-emerald-500/10 text-emerald-600 border-emerald-500/30">
-                            <CheckCircle2 className="w-3 h-3 mr-1" />
-                            Lunas
-                          </Badge>
-                        ) : (
-                          <Badge variant="outline" className="bg-amber-500/10 text-amber-600 border-amber-500/30">
-                            <Clock className="w-3 h-3 mr-1" />
-                            Belum Dibayar
-                          </Badge>
-                        )}
-                      </TableCell>
+            <>
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-muted/20 hover:bg-muted/20">
+                      <TableHead className="text-xs font-semibold">Periode</TableHead>
+                      <TableHead className="text-xs font-semibold text-right">Total Penjualan</TableHead>
+                      <TableHead className="text-xs font-semibold text-center">%</TableHead>
+                      <TableHead className="text-xs font-semibold text-right">Bagi Hasil</TableHead>
+                      <TableHead className="text-xs font-semibold text-center">Status</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
+                  </TableHeader>
+                  <TableBody>
+                    {paginatedPayments.map((payment) => (
+                      <TableRow key={payment.id} className="hover:bg-muted/10">
+                        <TableCell className="text-sm font-medium">
+                          {MONTHS_FULL[payment.period_month - 1]} {payment.period_year}
+                        </TableCell>
+                        <TableCell className="text-sm text-right">
+                          {formatCurrency(payment.total_revenue || 0)}
+                        </TableCell>
+                        <TableCell className="text-sm text-center text-muted-foreground">
+                          {payment.profit_sharing_percent}%
+                        </TableCell>
+                        <TableCell className="text-sm text-right font-semibold text-primary">
+                          {formatCurrency(payment.profit_sharing_amount || 0)}
+                        </TableCell>
+                        <TableCell className="text-center">
+                          {payment.payment_status === 'paid' ? (
+                            <Badge variant="outline" className="bg-emerald-500/10 text-emerald-600 border-emerald-500/30">
+                              <CheckCircle2 className="w-3 h-3 mr-1" />
+                              Lunas
+                            </Badge>
+                          ) : (
+                            <Badge variant="outline" className="bg-amber-500/10 text-amber-600 border-amber-500/30">
+                              <Clock className="w-3 h-3 mr-1" />
+                              Belum Dibayar
+                            </Badge>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+              
+              {/* Pagination */}
+              {filteredPayments.length > ITEMS_PER_PAGE_BAGI_HASIL && (
+                <div className="p-4 border-t border-border/50">
+                  <Pagination
+                    currentPage={currentPageBagiHasil}
+                    totalPages={totalPagesBagiHasil}
+                    totalItems={filteredPayments.length}
+                    itemsPerPage={ITEMS_PER_PAGE_BAGI_HASIL}
+                    onPageChange={setCurrentPageBagiHasil}
+                  />
+                </div>
+              )}
+            </>
           )}
         </CardContent>
       </Card>

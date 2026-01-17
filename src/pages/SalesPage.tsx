@@ -29,7 +29,8 @@ import {
   CommandItem,
   CommandList,
 } from '@/components/ui/command';
-import { Plus, Trash2, BarChart3, TrendingUp, DollarSign, ShoppingCart, Package, Loader2, Calendar as CalendarIcon, Check, ChevronsUpDown, Pencil, Search } from 'lucide-react';
+import { Plus, Trash2, BarChart3, TrendingUp, DollarSign, ShoppingCart, Package, Loader2, Calendar as CalendarIcon, Check, ChevronsUpDown, Pencil, Filter, Download, X } from 'lucide-react';
+import * as XLSX from 'xlsx';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
@@ -79,8 +80,12 @@ export default function SalesPage() {
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [isProductOpen, setIsProductOpen] = useState(false);
   
-  // Search filter state
-  const [searchQuery, setSearchQuery] = useState('');
+  // Filter state
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [filterCode, setFilterCode] = useState('');
+  const [filterName, setFilterName] = useState('');
+  const [filterDate, setFilterDate] = useState<Date | undefined>(undefined);
+  const [isFilterDateOpen, setIsFilterDateOpen] = useState(false);
   
   // Edit dialog state
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -100,7 +105,21 @@ export default function SalesPage() {
 
   const monthOptions = useMemo(() => generateMonthOptions(), []);
 
-  // Filter sales by selected month and search query
+  // Get unique product codes and names for filter dropdowns
+  const uniqueProductCodes = useMemo(() => {
+    const codes = [...new Set(sales.map(sale => sale.productCode))];
+    return codes.sort();
+  }, [sales]);
+
+  const uniqueProductNames = useMemo(() => {
+    const names = [...new Set(sales.map(sale => sale.productName))];
+    return names.sort();
+  }, [sales]);
+
+  // Count active filters
+  const activeFiltersCount = [filterCode, filterName, filterDate].filter(Boolean).length;
+
+  // Filter sales by selected month and filters
   const filteredSales = useMemo(() => {
     let result = sales;
     
@@ -113,17 +132,26 @@ export default function SalesPage() {
       });
     }
     
-    // Filter by search query (code or product name)
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase();
-      result = result.filter((sale) =>
-        sale.productCode.toLowerCase().includes(query) ||
-        sale.productName.toLowerCase().includes(query)
-      );
+    // Filter by specific date
+    if (filterDate) {
+      result = result.filter((sale) => {
+        const saleDate = new Date(sale.createdAt);
+        return saleDate.toDateString() === filterDate.toDateString();
+      });
+    }
+    
+    // Filter by product code
+    if (filterCode) {
+      result = result.filter((sale) => sale.productCode === filterCode);
+    }
+    
+    // Filter by product name
+    if (filterName) {
+      result = result.filter((sale) => sale.productName === filterName);
     }
     
     return result;
-  }, [sales, selectedMonth, searchQuery]);
+  }, [sales, selectedMonth, filterCode, filterName, filterDate]);
 
   // Format date to Indonesian format
   const formatDateIndonesian = (date: Date) => {
@@ -217,10 +245,58 @@ export default function SalesPage() {
     setCurrentPage(1);
   };
 
-  // Handle search change
-  const handleSearchChange = (value: string) => {
-    setSearchQuery(value);
+  // Reset all filters
+  const handleResetFilters = () => {
+    setFilterCode('');
+    setFilterName('');
+    setFilterDate(undefined);
     setCurrentPage(1);
+  };
+
+  // Apply filters and close popover
+  const handleApplyFilters = () => {
+    setIsFilterOpen(false);
+    setCurrentPage(1);
+  };
+
+  // Export to Excel
+  const handleExportExcel = () => {
+    if (filteredSales.length === 0) {
+      return;
+    }
+
+    const exportData = filteredSales.map((sale, index) => ({
+      'No': index + 1,
+      'Tanggal': format(new Date(sale.createdAt), 'dd/MM/yyyy'),
+      'Kode Produk': sale.productCode,
+      'Nama Produk': sale.productName,
+      'Qty': sale.quantity,
+      'Harga Jual': sale.pricePerUnit,
+      'Total Penjualan': sale.totalSales,
+      'HPP per Unit': sale.hppPerUnit,
+      'Total HPP': sale.totalHpp,
+      'Biaya Admin': sale.totalAdminFee,
+      'Laba Bersih': sale.netProfit,
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(exportData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Rekap Penjualan');
+
+    // Generate filename with filter info
+    let fileName = 'rekap-penjualan';
+    if (selectedMonthLabel) {
+      fileName += `-${selectedMonthLabel.replace(' ', '-')}`;
+    }
+    if (filterDate) {
+      fileName += `-${format(filterDate, 'dd-MM-yyyy')}`;
+    }
+    if (filterCode) {
+      fileName += `-${filterCode}`;
+    }
+    fileName += '.xlsx';
+
+    XLSX.writeFile(workbook, fileName);
   };
 
   // Open edit dialog with sale data
@@ -336,27 +412,131 @@ export default function SalesPage() {
             </div>
           </div>
           
-          {/* Search Filter */}
+          {/* Filter & Export Buttons */}
           <div className="flex items-center gap-2">
-            <div className="relative flex-1 max-w-sm">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input
-                placeholder="Cari kode atau nama produk..."
-                value={searchQuery}
-                onChange={(e) => handleSearchChange(e.target.value)}
-                className="pl-9"
-              />
-            </div>
-            {searchQuery && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => handleSearchChange('')}
-                className="text-muted-foreground"
-              >
-                Reset
-              </Button>
-            )}
+            {/* Filter Button */}
+            <Popover open={isFilterOpen} onOpenChange={setIsFilterOpen}>
+              <PopoverTrigger asChild>
+                <Button variant="outline" className="gap-2">
+                  <Filter size={16} />
+                  Filter
+                  {activeFiltersCount > 0 && (
+                    <span className="ml-1 h-5 w-5 rounded-full bg-primary text-primary-foreground text-xs flex items-center justify-center">
+                      {activeFiltersCount}
+                    </span>
+                  )}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-80 bg-popover" align="start">
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h4 className="font-medium">Filter Data</h4>
+                    {activeFiltersCount > 0 && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={handleResetFilters}
+                        className="h-auto p-1 text-xs text-muted-foreground"
+                      >
+                        Reset
+                      </Button>
+                    )}
+                  </div>
+                  
+                  {/* Filter by Product Code */}
+                  <div className="space-y-2">
+                    <Label className="text-sm">Kode Produk</Label>
+                    <Select value={filterCode} onValueChange={setFilterCode}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Semua kode" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-popover">
+                        <SelectItem value="">Semua kode</SelectItem>
+                        {uniqueProductCodes.map((code) => (
+                          <SelectItem key={code} value={code}>
+                            {code}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  {/* Filter by Product Name */}
+                  <div className="space-y-2">
+                    <Label className="text-sm">Nama Produk</Label>
+                    <Select value={filterName} onValueChange={setFilterName}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Semua produk" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-popover">
+                        <SelectItem value="">Semua produk</SelectItem>
+                        {uniqueProductNames.map((name) => (
+                          <SelectItem key={name} value={name}>
+                            {name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  {/* Filter by Date */}
+                  <div className="space-y-2">
+                    <Label className="text-sm">Tanggal</Label>
+                    <Popover open={isFilterDateOpen} onOpenChange={setIsFilterDateOpen}>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          className={cn(
+                            "w-full justify-start text-left font-normal",
+                            !filterDate && "text-muted-foreground"
+                          )}
+                        >
+                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          {filterDate ? format(filterDate, "dd MMMM yyyy", { locale: id }) : "Pilih tanggal..."}
+                          {filterDate && (
+                            <X
+                              className="ml-auto h-4 w-4 hover:text-destructive"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setFilterDate(undefined);
+                              }}
+                            />
+                          )}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0 bg-popover z-[100]" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={filterDate}
+                          onSelect={(date) => {
+                            setFilterDate(date);
+                            setIsFilterDateOpen(false);
+                          }}
+                          initialFocus
+                          className="pointer-events-auto"
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+                  
+                  {/* Apply Button */}
+                  <Button onClick={handleApplyFilters} className="w-full">
+                    Terapkan Filter
+                  </Button>
+                </div>
+              </PopoverContent>
+            </Popover>
+
+            {/* Export Button */}
+            <Button
+              variant="default"
+              className="gap-2"
+              onClick={handleExportExcel}
+              disabled={filteredSales.length === 0}
+            >
+              <Download size={16} />
+              Export
+            </Button>
           </div>
         </div>
       </div>

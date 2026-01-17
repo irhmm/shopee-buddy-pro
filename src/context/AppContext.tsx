@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -17,7 +17,8 @@ export interface AdminSettings {
   fixedDeduction: number;
 }
 
-export interface SaleRecord {
+// Raw sale data from database (without calculated fields)
+interface RawSaleRecord {
   id: string;
   productId: string | null;
   productName: string;
@@ -27,9 +28,13 @@ export interface SaleRecord {
   hppPerUnit: number;
   totalSales: number;
   totalHpp: number;
+  createdAt: Date;
+}
+
+// Sale record with dynamically calculated admin fee and profit
+export interface SaleRecord extends RawSaleRecord {
   totalAdminFee: number;
   netProfit: number;
-  createdAt: Date;
 }
 
 interface AppContextType {
@@ -51,8 +56,23 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 export function AppProvider({ children }: { children: ReactNode }) {
   const [products, setProducts] = useState<Product[]>([]);
   const [settings, setSettings] = useState<AdminSettings>({ adminFeePercent: 5, fixedDeduction: 1000 });
-  const [sales, setSales] = useState<SaleRecord[]>([]);
+  const [rawSales, setRawSales] = useState<RawSaleRecord[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Dynamically calculate admin fee and net profit based on current settings
+  const sales = useMemo<SaleRecord[]>(() => {
+    return rawSales.map((sale) => {
+      const adminFeeFromPercent = (sale.totalSales * settings.adminFeePercent) / 100;
+      const totalAdminFee = adminFeeFromPercent + settings.fixedDeduction;
+      const netProfit = sale.totalSales - sale.totalHpp - totalAdminFee;
+      
+      return {
+        ...sale,
+        totalAdminFee,
+        netProfit,
+      };
+    });
+  }, [rawSales, settings]);
 
   const fetchProducts = useCallback(async () => {
     const { data, error } = await supabase
@@ -111,7 +131,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    setSales(
+    // Store raw sales data without admin fee calculation
+    setRawSales(
       data.map((s) => ({
         id: s.id,
         productId: s.product_id,
@@ -122,8 +143,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
         hppPerUnit: Number(s.hpp_per_unit),
         totalSales: Number(s.total_sales),
         totalHpp: Number(s.total_hpp),
-        totalAdminFee: Number(s.total_admin_fee),
-        netProfit: Number(s.net_profit),
         createdAt: new Date(s.created_at),
       }))
     );
@@ -215,10 +234,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
     const totalSales = product.price * quantity;
     const totalHpp = product.hpp * quantity;
-    const adminFeeFromPercent = (totalSales * settings.adminFeePercent) / 100;
-    const totalAdminFee = adminFeeFromPercent + settings.fixedDeduction;
-    const netProfit = totalSales - totalHpp - totalAdminFee;
 
+    // Store only base data - admin fee and profit will be calculated dynamically
     const { error } = await supabase.from('sales').insert({
       product_id: productId,
       product_name: product.name,
@@ -228,8 +245,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
       hpp_per_unit: product.hpp,
       total_sales: totalSales,
       total_hpp: totalHpp,
-      total_admin_fee: totalAdminFee,
-      net_profit: netProfit,
+      total_admin_fee: 0, // Will be calculated dynamically
+      net_profit: 0, // Will be calculated dynamically
     });
 
     if (error) {

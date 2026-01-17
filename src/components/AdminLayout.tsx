@@ -73,24 +73,26 @@ export function AdminLayout({ children }: AdminLayoutProps) {
         )}
       >
         {/* Logo */}
-        <div className="h-16 flex items-center justify-center px-4 border-b border-sidebar-border">
-          {/* Logo - only visible when sidebar is open */}
-          {sidebarOpen && (
-            <div className="flex items-center gap-3 flex-1">
+        <div className="h-16 flex items-center px-4 border-b border-sidebar-border">
+          {/* Logo - visible when sidebar open OR on mobile menu */}
+          {(sidebarOpen || mobileMenuOpen) ? (
+            <div className="flex items-center gap-3 flex-1 min-w-0">
               <div className="w-10 h-10 bg-gradient-to-br from-violet-600 to-indigo-600 rounded-xl flex items-center justify-center shadow-card flex-shrink-0">
                 <Shield className="w-6 h-6 text-white" />
               </div>
-              <div className="overflow-hidden">
-                <h1 className="font-bold text-sidebar-foreground text-lg">Super Admin</h1>
+              <div className="overflow-hidden flex-1 min-w-0">
+                <h1 className="font-bold text-sidebar-foreground text-lg truncate">Super Admin</h1>
                 <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
               </div>
             </div>
+          ) : (
+            <div className="flex-1" />
           )}
           
-          {/* Toggle Button - always visible, centered when collapsed */}
+          {/* Toggle Button - hidden on mobile, always visible on desktop */}
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="hidden lg:flex p-1.5 rounded-lg hover:bg-sidebar-accent transition-colors"
+            className="hidden lg:flex p-2 rounded-lg hover:bg-sidebar-accent transition-colors flex-shrink-0"
           >
             <Menu size={20} className="text-sidebar-foreground" />
           </button>
@@ -109,11 +111,13 @@ export function AdminLayout({ children }: AdminLayoutProps) {
                 className={cn(
                   "sidebar-link",
                   isActive && "active",
-                  !sidebarOpen && "lg:justify-center lg:px-3"
+                  !sidebarOpen && !mobileMenuOpen && "lg:justify-center lg:px-3"
                 )}
               >
                 <Icon size={20} className="flex-shrink-0" />
-                {(sidebarOpen || mobileMenuOpen) && <span>{item.label}</span>}
+                {(sidebarOpen || mobileMenuOpen) && (
+                  <span className="truncate">{item.label}</span>
+                )}
               </Link>
             );
           })}
@@ -126,11 +130,11 @@ export function AdminLayout({ children }: AdminLayoutProps) {
             onClick={signOut}
             className={cn(
               "w-full justify-start gap-3 text-muted-foreground hover:text-destructive hover:bg-destructive/10",
-              !sidebarOpen && "lg:justify-center lg:px-3"
+              !sidebarOpen && !mobileMenuOpen && "lg:justify-center lg:px-3"
             )}
           >
-            <LogOut size={20} />
-            {(sidebarOpen || mobileMenuOpen) && <span>Logout</span>}
+            <LogOut size={20} className="flex-shrink-0" />
+            {(sidebarOpen || mobileMenuOpen) && <span className="truncate">Logout</span>}
           </Button>
         </div>
       </aside>

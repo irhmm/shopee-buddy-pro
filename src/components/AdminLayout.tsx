@@ -7,12 +7,13 @@ import {
   FileBarChart, 
   Menu, 
   X, 
-  ShoppingBag,
   LogOut,
-  Shield,
   Receipt,
   Package,
-  TrendingUp
+  TrendingUp,
+  PanelLeftClose,
+  PanelLeft,
+  Building2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/context/AuthContext';
@@ -41,18 +42,16 @@ export function AdminLayout({ children }: AdminLayoutProps) {
   return (
     <div className="min-h-screen bg-background">
       {/* Mobile Header */}
-      <header className="lg:hidden fixed top-0 left-0 right-0 h-16 bg-card border-b border-border z-50 flex items-center px-4">
+      <header className="lg:hidden fixed top-0 left-0 right-0 h-14 bg-card border-b border-border z-50 flex items-center px-4">
         <button
           onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
           className="p-2 rounded-lg hover:bg-secondary transition-colors"
         >
-          {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+          {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
         </button>
         <div className="flex items-center gap-2 ml-3">
-          <div className="w-8 h-8 gradient-primary rounded-lg flex items-center justify-center">
-            <ShoppingBag className="w-5 h-5 text-primary-foreground" />
-          </div>
-          <span className="font-semibold text-foreground">Super Admin</span>
+          <Building2 className="w-5 h-5 text-primary" />
+          <span className="font-semibold text-foreground text-sm">Super Admin</span>
         </div>
       </header>
 
@@ -67,39 +66,41 @@ export function AdminLayout({ children }: AdminLayoutProps) {
       {/* Sidebar */}
       <aside
         className={cn(
-          "fixed top-0 left-0 h-full bg-sidebar border-r border-sidebar-border z-50 transition-all duration-300",
-          sidebarOpen ? "w-64" : "w-20",
+          "fixed top-0 left-0 h-full bg-card border-r border-border z-50 transition-all duration-300 flex flex-col",
+          sidebarOpen ? "w-60" : "w-16",
           mobileMenuOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
         )}
       >
-        {/* Logo */}
-        <div className="h-16 flex items-center px-4 border-b border-sidebar-border">
-          {/* Logo - visible when sidebar open OR on mobile menu */}
-          {(sidebarOpen || mobileMenuOpen) ? (
-            <div className="flex items-center gap-3 flex-1 min-w-0">
-              <div className="w-10 h-10 bg-gradient-to-br from-violet-600 to-indigo-600 rounded-xl flex items-center justify-center shadow-card flex-shrink-0">
-                <Shield className="w-6 h-6 text-white" />
-              </div>
-              <div className="overflow-hidden flex-1 min-w-0">
-                <h1 className="font-bold text-sidebar-foreground text-lg truncate">Super Admin</h1>
-                <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
+        {/* Header with Toggle */}
+        <div className="h-14 flex items-center justify-between px-3 border-b border-border">
+          {(sidebarOpen || mobileMenuOpen) && (
+            <div className="flex items-center gap-2 min-w-0 flex-1">
+              <Building2 className="w-5 h-5 text-primary flex-shrink-0" />
+              <div className="min-w-0 flex-1">
+                <h1 className="font-semibold text-foreground text-sm truncate">Super Admin</h1>
+                <p className="text-[10px] text-muted-foreground truncate">{user?.email}</p>
               </div>
             </div>
-          ) : (
-            <div className="flex-1" />
           )}
           
-          {/* Toggle Button - hidden on mobile, always visible on desktop */}
+          {/* Toggle Button */}
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="hidden lg:flex p-2 rounded-lg hover:bg-sidebar-accent transition-colors flex-shrink-0"
+            className="hidden lg:flex p-1.5 rounded-md hover:bg-secondary transition-colors text-muted-foreground hover:text-foreground"
           >
-            <Menu size={20} className="text-sidebar-foreground" />
+            {sidebarOpen ? <PanelLeftClose size={18} /> : <PanelLeft size={18} />}
           </button>
         </div>
 
+        {/* Menu Label */}
+        {(sidebarOpen || mobileMenuOpen) && (
+          <div className="px-4 py-3">
+            <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Menu Utama</span>
+          </div>
+        )}
+
         {/* Navigation */}
-        <nav className="p-3 space-y-1">
+        <nav className={cn("flex-1 px-2 space-y-0.5", !sidebarOpen && !mobileMenuOpen && "px-2 pt-3")}>
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive = location.pathname === item.path;
@@ -109,12 +110,14 @@ export function AdminLayout({ children }: AdminLayoutProps) {
                 to={item.path}
                 onClick={() => setMobileMenuOpen(false)}
                 className={cn(
-                  "sidebar-link",
-                  isActive && "active",
-                  !sidebarOpen && !mobileMenuOpen && "lg:justify-center lg:px-3"
+                  "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all duration-200",
+                  "text-muted-foreground hover:text-foreground hover:bg-secondary",
+                  isActive && "bg-primary/10 text-primary font-medium",
+                  !sidebarOpen && !mobileMenuOpen && "justify-center px-0"
                 )}
+                title={!sidebarOpen && !mobileMenuOpen ? item.label : undefined}
               >
-                <Icon size={20} className="flex-shrink-0" />
+                <Icon size={18} className="flex-shrink-0" />
                 {(sidebarOpen || mobileMenuOpen) && (
                   <span className="truncate">{item.label}</span>
                 )}
@@ -124,17 +127,18 @@ export function AdminLayout({ children }: AdminLayoutProps) {
         </nav>
 
         {/* Logout Button */}
-        <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-sidebar-border">
+        <div className="p-3 border-t border-border mt-auto">
           <Button
             variant="ghost"
             onClick={signOut}
             className={cn(
-              "w-full justify-start gap-3 text-muted-foreground hover:text-destructive hover:bg-destructive/10",
-              !sidebarOpen && !mobileMenuOpen && "lg:justify-center lg:px-3"
+              "w-full justify-start gap-3 text-muted-foreground hover:text-destructive hover:bg-destructive/10 h-10",
+              !sidebarOpen && !mobileMenuOpen && "justify-center px-0"
             )}
+            title={!sidebarOpen && !mobileMenuOpen ? "Logout" : undefined}
           >
-            <LogOut size={20} className="flex-shrink-0" />
-            {(sidebarOpen || mobileMenuOpen) && <span className="truncate">Logout</span>}
+            <LogOut size={18} className="flex-shrink-0" />
+            {(sidebarOpen || mobileMenuOpen) && <span className="text-sm">Logout</span>}
           </Button>
         </div>
       </aside>
@@ -142,11 +146,19 @@ export function AdminLayout({ children }: AdminLayoutProps) {
       {/* Main Content */}
       <main
         className={cn(
-          "min-h-screen transition-all duration-300 pt-16 lg:pt-0",
-          sidebarOpen ? "lg:ml-64" : "lg:ml-20"
+          "min-h-screen transition-all duration-300 pt-14 lg:pt-0",
+          sidebarOpen ? "lg:ml-60" : "lg:ml-16"
         )}
       >
-        <div className="p-4 lg:p-8">{children}</div>
+        {/* Content Header */}
+        <div className="hidden lg:flex h-14 items-center gap-3 px-6 border-b border-border bg-card">
+          <Building2 className="w-5 h-5 text-primary" />
+          <div>
+            <h1 className="font-semibold text-foreground text-sm">Shopee Buddy Pro</h1>
+            <p className="text-[10px] text-muted-foreground">Franchise Management System</p>
+          </div>
+        </div>
+        <div className="p-4 lg:p-6">{children}</div>
       </main>
     </div>
   );

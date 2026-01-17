@@ -4,10 +4,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { TrendingUp, TrendingDown, DollarSign, ShoppingCart, Wallet } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+const MONTHS_FULL = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
 
 // Color scheme
 const COLORS = {
@@ -318,6 +320,70 @@ export default function LaporanKeuanganPage() {
                 <p className="text-lg md:text-xl font-bold text-amber-600 dark:text-amber-400">{formatCurrency(yearlyTotals.pengeluaran)}</p>
               </div>
             </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Monthly Details Table */}
+      <Card className="shadow-md border-border/50 overflow-hidden">
+        <CardHeader className="py-3 px-4 border-b border-border/50 bg-muted/30">
+          <CardTitle className="text-base font-bold">Rincian Per Bulan - {selectedYear}</CardTitle>
+        </CardHeader>
+        <CardContent className="p-0">
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-muted/20 hover:bg-muted/20">
+                  <TableHead className="text-xs font-semibold text-muted-foreground w-[120px]">Bulan</TableHead>
+                  <TableHead className="text-xs font-semibold text-muted-foreground text-right">Penjualan</TableHead>
+                  <TableHead className="text-xs font-semibold text-muted-foreground text-right">Laba Bersih</TableHead>
+                  <TableHead className="text-xs font-semibold text-muted-foreground text-right">Pengeluaran</TableHead>
+                  <TableHead className="text-xs font-semibold text-muted-foreground text-right">Saldo Bersih</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {monthlyData.map((data, index) => {
+                  const saldoBersih = data.penjualan - data.pengeluaran;
+                  const hasData = data.penjualan > 0 || data.labaBersih > 0 || data.pengeluaran > 0;
+                  
+                  if (!hasData) return null;
+                  
+                  return (
+                    <TableRow key={data.month} className="hover:bg-muted/10">
+                      <TableCell className="text-sm font-medium">{MONTHS_FULL[index]}</TableCell>
+                      <TableCell className="text-sm text-right text-emerald-600 dark:text-emerald-400">
+                        {formatCurrency(data.penjualan)}
+                      </TableCell>
+                      <TableCell className="text-sm text-right text-blue-600 dark:text-blue-400">
+                        {formatCurrency(data.labaBersih)}
+                      </TableCell>
+                      <TableCell className="text-sm text-right text-amber-600 dark:text-amber-400">
+                        {formatCurrency(data.pengeluaran)}
+                      </TableCell>
+                      <TableCell className={`text-sm text-right font-semibold ${saldoBersih >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}>
+                        {formatCurrency(saldoBersih)}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+                {/* Total Row */}
+                <TableRow className="bg-muted/30 hover:bg-muted/30 border-t-2 border-border">
+                  <TableCell className="text-sm font-bold">Total</TableCell>
+                  <TableCell className="text-sm text-right font-bold text-emerald-600 dark:text-emerald-400">
+                    {formatCurrency(yearlyTotals.penjualan)}
+                  </TableCell>
+                  <TableCell className="text-sm text-right font-bold text-blue-600 dark:text-blue-400">
+                    {formatCurrency(yearlyTotals.labaBersih)}
+                  </TableCell>
+                  <TableCell className="text-sm text-right font-bold text-amber-600 dark:text-amber-400">
+                    {formatCurrency(yearlyTotals.pengeluaran)}
+                  </TableCell>
+                  <TableCell className={`text-sm text-right font-bold ${(yearlyTotals.penjualan - yearlyTotals.pengeluaran) >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}>
+                    {formatCurrency(yearlyTotals.penjualan - yearlyTotals.pengeluaran)}
+                  </TableCell>
+                </TableRow>
+              </TableBody>
+            </Table>
           </div>
         </CardContent>
       </Card>

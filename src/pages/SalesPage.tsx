@@ -501,12 +501,12 @@ export default function SalesPage() {
               {/* Filter by Product Code */}
               <div className="space-y-2">
                 <Label className="text-sm">Kode Produk</Label>
-                <Select value={filterCode} onValueChange={setFilterCode}>
+                <Select value={filterCode || "__all__"} onValueChange={(v) => setFilterCode(v === "__all__" ? "" : v)}>
                   <SelectTrigger>
                     <SelectValue placeholder="Semua kode" />
                   </SelectTrigger>
                   <SelectContent className="bg-popover">
-                    <SelectItem value="">Semua kode</SelectItem>
+                    <SelectItem value="__all__">Semua kode</SelectItem>
                     {uniqueProductCodes.map((code) => (
                       <SelectItem key={code} value={code}>
                         {code}
@@ -519,12 +519,12 @@ export default function SalesPage() {
               {/* Filter by Product Name */}
               <div className="space-y-2">
                 <Label className="text-sm">Nama Produk</Label>
-                <Select value={filterName} onValueChange={setFilterName}>
+                <Select value={filterName || "__all__"} onValueChange={(v) => setFilterName(v === "__all__" ? "" : v)}>
                   <SelectTrigger>
                     <SelectValue placeholder="Semua produk" />
                   </SelectTrigger>
                   <SelectContent className="bg-popover">
-                    <SelectItem value="">Semua produk</SelectItem>
+                    <SelectItem value="__all__">Semua produk</SelectItem>
                     {uniqueProductNames.map((name) => (
                       <SelectItem key={name} value={name}>
                         {name}

@@ -4,7 +4,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Pagination } from '@/components/Pagination';
-import { Plus, Pencil, Trash2, Package } from 'lucide-react';
+import { LoadingSpinner } from '@/components/LoadingSpinner';
+import { Plus, Pencil, Trash2, Package, Loader2 } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -27,10 +28,11 @@ import {
 const ITEMS_PER_PAGE = 10;
 
 export default function ProductsPage() {
-  const { products, addProduct, updateProduct, deleteProduct } = useApp();
+  const { products, addProduct, updateProduct, deleteProduct, loading } = useApp();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -65,8 +67,10 @@ export default function ProductsPage() {
     setIsDialogOpen(true);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsSubmitting(true);
+
     const productData = {
       name: formData.name,
       code: formData.code,
@@ -74,14 +78,21 @@ export default function ProductsPage() {
       price: parseFloat(formData.price) || 0,
     };
 
-    if (editingProduct) {
-      updateProduct(editingProduct.id, productData);
-    } else {
-      addProduct(productData);
+    try {
+      if (editingProduct) {
+        await updateProduct(editingProduct.id, productData);
+      } else {
+        await addProduct(productData);
+      }
+      setIsDialogOpen(false);
+      resetForm();
+    } finally {
+      setIsSubmitting(false);
     }
+  };
 
-    setIsDialogOpen(false);
-    resetForm();
+  const handleDelete = async (id: string) => {
+    await deleteProduct(id);
   };
 
   const formatCurrency = (value: number) => {
@@ -91,6 +102,20 @@ export default function ProductsPage() {
       minimumFractionDigits: 0,
     }).format(value);
   };
+
+  if (loading) {
+    return (
+      <div className="animate-fade-in">
+        <div className="page-header">
+          <h1 className="page-title">Add Produk</h1>
+          <p className="page-subtitle">Kelola daftar produk untuk rekap penjualan</p>
+        </div>
+        <div className="table-container">
+          <LoadingSpinner message="Memuat data produk..." />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="animate-fade-in">
@@ -121,6 +146,7 @@ export default function ProductsPage() {
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   placeholder="Masukkan nama produk"
                   required
+                  disabled={isSubmitting}
                 />
               </div>
               <div className="space-y-2">
@@ -131,6 +157,7 @@ export default function ProductsPage() {
                   onChange={(e) => setFormData({ ...formData, code: e.target.value })}
                   placeholder="Contoh: SKU001"
                   required
+                  disabled={isSubmitting}
                 />
               </div>
               <div className="grid grid-cols-2 gap-4">
@@ -144,6 +171,7 @@ export default function ProductsPage() {
                     placeholder="0"
                     min="0"
                     required
+                    disabled={isSubmitting}
                   />
                 </div>
                 <div className="space-y-2">
@@ -156,6 +184,7 @@ export default function ProductsPage() {
                     placeholder="0"
                     min="0"
                     required
+                    disabled={isSubmitting}
                   />
                 </div>
               </div>
@@ -167,10 +196,12 @@ export default function ProductsPage() {
                     setIsDialogOpen(false);
                     resetForm();
                   }}
+                  disabled={isSubmitting}
                 >
                   Batal
                 </Button>
-                <Button type="submit">
+                <Button type="submit" disabled={isSubmitting}>
+                  {isSubmitting && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                   {editingProduct ? 'Simpan Perubahan' : 'Tambah Produk'}
                 </Button>
               </div>
@@ -255,7 +286,7 @@ export default function ProductsPage() {
                               <AlertDialogFooter>
                                 <AlertDialogCancel>Batal</AlertDialogCancel>
                                 <AlertDialogAction
-                                  onClick={() => deleteProduct(product.id)}
+                                  onClick={() => handleDelete(product.id)}
                                   className="bg-destructive hover:bg-destructive/90"
                                 >
                                   Hapus

@@ -3,16 +3,25 @@ import { useApp } from '@/context/AppContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Settings, Check, Info } from 'lucide-react';
+import { LoadingSpinner } from '@/components/LoadingSpinner';
+import { Settings, Check, Info, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function SettingsPage() {
-  const { settings, updateSettings } = useApp();
+  const { settings, updateSettings, loading } = useApp();
   const [formData, setFormData] = useState({
     adminFeePercent: settings.adminFeePercent.toString(),
     fixedDeduction: settings.fixedDeduction.toString(),
   });
   const [hasChanges, setHasChanges] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    setFormData({
+      adminFeePercent: settings.adminFeePercent.toString(),
+      fixedDeduction: settings.fixedDeduction.toString(),
+    });
+  }, [settings]);
 
   useEffect(() => {
     const currentPercent = parseFloat(formData.adminFeePercent) || 0;
@@ -23,14 +32,20 @@ export default function SettingsPage() {
     );
   }, [formData, settings]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    updateSettings({
-      adminFeePercent: parseFloat(formData.adminFeePercent) || 0,
-      fixedDeduction: parseFloat(formData.fixedDeduction) || 0,
-    });
-    setHasChanges(false);
-    toast.success('Pengaturan berhasil disimpan');
+    setIsSubmitting(true);
+
+    try {
+      await updateSettings({
+        adminFeePercent: parseFloat(formData.adminFeePercent) || 0,
+        fixedDeduction: parseFloat(formData.fixedDeduction) || 0,
+      });
+      setHasChanges(false);
+      toast.success('Pengaturan berhasil disimpan');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const formatCurrency = (value: number) => {
@@ -40,6 +55,20 @@ export default function SettingsPage() {
       minimumFractionDigits: 0,
     }).format(value);
   };
+
+  if (loading) {
+    return (
+      <div className="animate-fade-in max-w-2xl">
+        <div className="page-header">
+          <h1 className="page-title">Setting Biaya Admin</h1>
+          <p className="page-subtitle">Atur biaya admin Shopee yang berlaku untuk semua produk</p>
+        </div>
+        <div className="form-section">
+          <LoadingSpinner message="Memuat pengaturan..." />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="animate-fade-in max-w-2xl">
@@ -89,6 +118,7 @@ export default function SettingsPage() {
                     setFormData({ ...formData, adminFeePercent: e.target.value })
                   }
                   className="pr-12"
+                  disabled={isSubmitting}
                 />
                 <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">
                   %
@@ -109,6 +139,7 @@ export default function SettingsPage() {
                 onChange={(e) =>
                   setFormData({ ...formData, fixedDeduction: e.target.value })
                 }
+                disabled={isSubmitting}
               />
               <p className="text-xs text-muted-foreground">
                 Nominal tetap yang dipotong per transaksi
@@ -117,8 +148,12 @@ export default function SettingsPage() {
           </div>
 
           <div className="pt-4 border-t border-border">
-            <Button type="submit" disabled={!hasChanges} className="gap-2">
-              <Check size={18} />
+            <Button type="submit" disabled={!hasChanges || isSubmitting} className="gap-2">
+              {isSubmitting ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Check size={18} />
+              )}
               Simpan Pengaturan
             </Button>
           </div>

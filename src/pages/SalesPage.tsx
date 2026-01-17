@@ -379,7 +379,7 @@ export default function SalesPage() {
                     ) : (
                       products.map((product) => (
                         <SelectItem key={product.id} value={product.id}>
-                          {product.name} - {formatCurrency(product.price)}
+                          [{product.code}] {product.name} - {formatCurrency(product.price)}
                         </SelectItem>
                       ))
                     )}

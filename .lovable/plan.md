@@ -1,214 +1,112 @@
-# Rencana: Halaman Bagi Hasil Franchise (Super Admin Only)
+# Rencana: Perbaikan Rumus Bagi Hasil di Semua Halaman
 
-## Overview
-Membuat halaman baru untuk mengelola pembayaran bagi hasil dari setiap franchise ke Super Admin. Halaman ini hanya dapat diakses oleh Super Admin, dan role Franchise hanya bisa melihat (read-only) tanpa aksi CRUD.
+## Masalah
+Saat ini ketiga halaman menghitung bagi hasil dari **Laba Bersih** (Total Penjualan - HPP - Biaya Admin), padahal seharusnya dihitung langsung dari **Total Penjualan** tanpa potongan apapun.
 
----
+## Rumus yang Salah (Saat Ini)
+```
+Bagi Hasil = (Total Penjualan - HPP - Biaya Admin) x Persentase
+```
 
-## 1. Database Schema Baru
-
-### Tabel `profit_sharing_payments`
-Menyimpan data pembayaran bagi hasil per franchise per periode (bulan/tahun):
-
-```sql
-CREATE TABLE public.profit_sharing_payments (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    franchise_id UUID REFERENCES public.franchises(id) ON DELETE CASCADE NOT NULL,
-    period_month INTEGER NOT NULL CHECK (period_month >= 1 AND period_month <= 12),
-    period_year INTEGER NOT NULL CHECK (period_year >= 2020),
-    total_revenue NUMERIC DEFAULT 0,          -- Total pendapatan
-    profit_sharing_percent NUMERIC DEFAULT 0, -- % bagi hasil saat itu
-    profit_sharing_amount NUMERIC DEFAULT 0,  -- Nominal bagi hasil
-    payment_status TEXT DEFAULT 'unpaid' CHECK (payment_status IN ('paid', 'unpaid')),
-    paid_at TIMESTAMPTZ,                      -- Tanggal dibayar
-    notes TEXT,                               -- Catatan pembayaran
-    created_at TIMESTAMPTZ DEFAULT now(),
-    updated_at TIMESTAMPTZ DEFAULT now(),
-    UNIQUE(franchise_id, period_month, period_year)
-);
-
--- Enable RLS
-ALTER TABLE public.profit_sharing_payments ENABLE ROW LEVEL SECURITY;
-
--- Policy: Super Admin full access
-CREATE POLICY "Super admin can manage profit sharing payments"
-ON public.profit_sharing_payments FOR ALL TO authenticated
-USING (has_role(auth.uid(), 'super_admin'))
-WITH CHECK (has_role(auth.uid(), 'super_admin'));
-
--- Policy: Franchise hanya bisa lihat pembayaran sendiri
-CREATE POLICY "Franchise can view own payments"
-ON public.profit_sharing_payments FOR SELECT TO authenticated
-USING (franchise_id = get_user_franchise_id(auth.uid()));
+## Rumus yang Benar
+```
+Bagi Hasil = Total Penjualan x Persentase Bagi Hasil
 ```
 
 ---
 
-## 2. Halaman Baru: `/admin/profit-sharing-payments`
+## Perubahan yang Akan Dilakukan
 
-### File: `src/pages/admin/ProfitSharingPayments.tsx`
+### 1. File: `src/pages/admin/ProfitSharingPayments.tsx`
 
-### A. Layout Halaman
+**Lokasi**: Line 227-230
 
-```
-+------------------------------------------------------------------+
-|  HEADER: Bagi Hasil Franchise                                     |
-+------------------------------------------------------------------+
-|                                                                   |
-|  +-------------------+  +-------------------+  +------------------+|
-|  | Total Bagi Hasil  |  | Sudah Dibayar     |  | Belum Dibayar   ||
-|  | Bulan Ini         |  |                   |  |                 ||
-|  | Rp 2.248.869,5    |  | 0 Franchise       |  | 5 Franchise     ||
-|  +-------------------+  +-------------------+  +------------------+|
-|                                                                   |
-|  +----------------------------------------------------------------+
-|  | [Q] Cari franchise...   | [Filter] January 2026 |             |
-|  |                                                               |
-|  |  [Hitung Ulang Data]  [Export Excel]                         |
-|  +----------------------------------------------------------------+
-|                                                                   |
-|  +----------------------------------------------------------------+
-|  | Nama      | Total Pendapatan | % Bagi | Nominal   | Status  | |
-|  | Franchise | (Admin+Worker)   | Hasil  | Bagi Hasil| Bayar   | Aksi|
-|  +-----------+------------------+--------+-----------+---------+---+
-|  | Abdul     | Rp 1.966.500     | 10%    | Rp 196.650| Belum   | E D|
-|  | irhamm    | Rp 0             | 10%    | Rp 0      | Belum   | E D|
-|  | Masayu    | Rp 17.643.195    | 10%    | Rp 1.764k | Belum   | E D|
-|  | ...       | ...              | ...    | ...       | ...     | ...|
-|  +----------------------------------------------------------------+
-|                                                                   |
-+------------------------------------------------------------------+
-```
-
-### B. Fitur
-
-1. **Summary Cards (3 kartu)**:
-   - Total Bagi Hasil Bulan Ini (semua franchise)
-   - Sudah Dibayar (count franchise dengan status "paid")
-   - Belum Dibayar (count franchise dengan status "unpaid")
-
-2. **Filter & Search**:
-   - Input pencarian nama franchise
-   - Dropdown bulan dan tahun (default: bulan ini)
-
-3. **Tombol Aksi Header**:
-   - **Hitung Ulang Data**: Menghitung ulang bagi hasil dari data sales
-   - **Export Excel**: Export data tabel ke Excel
-
-4. **Tabel Data**:
-   - Nama Franchise
-   - Total Pendapatan (dari sales bulan tersebut)
-   - Persentase Bagi Hasil (dari franchises.profit_sharing_percent)
-   - Nominal Bagi Hasil (dihitung: laba bersih x %)
-   - Status Pembayaran (badge: Belum Dibayar / Sudah Dibayar)
-   - Aksi:
-     - Edit (ubah status pembayaran)
-     - Hapus (hapus record pembayaran)
-
-5. **Dialog Edit Status**:
-   - Toggle status: Paid / Unpaid
-   - Tanggal pembayaran (jika paid)
-   - Catatan (opsional)
-
----
-
-## 3. Logika Perhitungan "Hitung Ulang Data"
-
-Fungsi ini akan:
-1. Fetch semua franchise aktif
-2. Untuk setiap franchise:
-   a. Fetch sales di periode yang dipilih
-   b. Hitung total penjualan (sum total_sales)
-   c. Hitung total HPP (sum total_hpp)
-   d. Hitung total biaya admin (sum total_admin_fee)
-   e. Hitung laba bersih = total_sales - total_hpp - total_admin_fee
-   f. Hitung bagi hasil = laba bersih * profit_sharing_percent / 100
-3. Upsert ke tabel `profit_sharing_payments`
-   - Jika sudah ada record untuk franchise+bulan+tahun, update
-   - Jika belum ada, insert baru
-
----
-
-## 4. Perubahan pada Navigation
-
-### File: `src/components/AdminLayout.tsx`
-
-Tambah menu baru di navItems:
+**Sebelum**:
 ```typescript
-const navItems = [
-  { path: '/admin', label: 'Dashboard', icon: LayoutDashboard },
-  { path: '/admin/franchises', label: 'Kelola Franchise', icon: Users },
-  { path: '/admin/profit-sharing', label: 'Setting Bagi Hasil', icon: Percent },
-  { path: '/admin/profit-sharing-payments', label: 'Bagi Hasil Franchise', icon: Receipt }, // NEW
-  { path: '/admin/reports', label: 'Laporan Global', icon: FileBarChart },
-];
+const netProfit = totalSales - totalHpp - totalAdminFee;
+const profitSharingAmount = netProfit > 0 
+  ? netProfit * (franchise.profit_sharing_percent / 100) 
+  : 0;
 ```
 
----
-
-## 5. Perubahan pada Routing
-
-### File: `src/App.tsx`
-
-Tambah route baru:
+**Sesudah**:
 ```typescript
-import ProfitSharingPayments from "./pages/admin/ProfitSharingPayments";
-
-// Di dalam Routes
-<Route path="/admin/profit-sharing-payments" element={
-  <AdminRoute>
-    <AdminLayout><ProfitSharingPayments /></AdminLayout>
-  </AdminRoute>
-} />
+// Bagi hasil dihitung dari total penjualan langsung
+const profitSharingAmount = totalSales * (franchise.profit_sharing_percent / 100);
 ```
 
 ---
 
-## 6. Komponen UI yang Digunakan
+### 2. File: `src/pages/admin/Dashboard.tsx`
 
-- Card (summary cards)
-- Input (search)
-- Select (month/year filter)
-- Button (actions)
-- Table (data table)
-- Badge (status pembayaran)
-- Dialog (edit status)
-- Pagination (jika data banyak)
+**Lokasi**: Line 147-149 (dalam loop per bulan)
 
----
-
-## 7. Export Excel
-
-Menggunakan library `xlsx` yang sudah terinstall:
+**Sebelum**:
 ```typescript
-import * as XLSX from 'xlsx';
+const profit = totalSales - totalHpp - totalAdminFee;
+const profitSharingPercent = Number(franchise.profit_sharing_percent) || 0;
+const profitSharing = profit > 0 ? (profit * profitSharingPercent / 100) : 0;
+```
 
-const exportToExcel = () => {
-  const worksheet = XLSX.utils.json_to_sheet(tableData);
-  const workbook = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(workbook, worksheet, 'Bagi Hasil');
-  XLSX.writeFile(workbook, `bagi-hasil-${selectedMonth}-${selectedYear}.xlsx`);
-};
+**Sesudah**:
+```typescript
+const profitSharingPercent = Number(franchise.profit_sharing_percent) || 0;
+// Bagi hasil dihitung dari total penjualan langsung
+const profitSharing = totalSales * profitSharingPercent / 100;
+```
+
+**Lokasi**: Line 173-175 (dalam ringkasan tahunan)
+
+**Sebelum**:
+```typescript
+const totalProfit = totalSales - totalHpp - totalAdminFee;
+const profitSharing = totalProfit > 0 ? (totalProfit * profitSharingPercent / 100) : 0;
+```
+
+**Sesudah**:
+```typescript
+const totalProfit = totalSales - totalHpp - totalAdminFee; // tetap hitung untuk display
+// Bagi hasil dihitung dari total penjualan langsung
+const profitSharing = totalSales * profitSharingPercent / 100;
 ```
 
 ---
 
-## 8. Styling (Sesuai Gambar)
+### 3. File: `src/pages/admin/GlobalReports.tsx`
 
-- Summary cards dengan background gradient soft
-- Badge "Belum Dibayar" warna orange
-- Badge "Sudah Dibayar" warna hijau
-- Tabel dengan border tipis dan hover effect
-- Icon edit (pensil) dan delete (trash) untuk aksi
+**Lokasi**: Line 136-139
+
+**Sebelum**:
+```typescript
+data.netProfit = data.totalSales - data.totalHpp - data.totalAdminFee;
+data.profitSharing = data.netProfit > 0 
+  ? (data.netProfit * (franchise?.profitSharingPercent || 0) / 100) 
+  : 0;
+```
+
+**Sesudah**:
+```typescript
+data.netProfit = data.totalSales - data.totalHpp - data.totalAdminFee; // tetap hitung untuk display
+// Bagi hasil dihitung dari total penjualan langsung
+data.profitSharing = data.totalSales * (franchise?.profitSharingPercent || 0) / 100;
+```
 
 ---
 
-## Ringkasan File yang Akan Dibuat/Diubah
+## Ringkasan Perubahan
 
-| File | Aksi | Deskripsi |
-|------|------|-----------|
-| `supabase/migrations/xxx.sql` | CREATE | Migrasi tabel profit_sharing_payments |
-| `src/pages/admin/ProfitSharingPayments.tsx` | CREATE | Halaman baru bagi hasil |
-| `src/components/AdminLayout.tsx` | MODIFY | Tambah menu navigasi |
-| `src/App.tsx` | MODIFY | Tambah routing |
-| `src/integrations/supabase/types.ts` | AUTO UPDATE | Types dari Supabase |
+| File | Perubahan |
+|------|-----------|
+| `ProfitSharingPayments.tsx` | Ubah rumus bagi hasil dari laba bersih ke total penjualan |
+| `Dashboard.tsx` | Ubah rumus bagi hasil di chart bulanan dan tabel tahunan |
+| `GlobalReports.tsx` | Ubah rumus bagi hasil di tabel detail franchise |
+
+## Hasil Akhir
+
+Setelah perubahan ini, semua halaman akan menampilkan **nilai bagi hasil yang konsisten** dan dihitung dengan rumus yang sama:
+
+```
+Bagi Hasil = Total Penjualan x Persentase Bagi Hasil
+```
+
+Nilai laba bersih (Total Penjualan - HPP - Biaya Admin) tetap ditampilkan di UI untuk informasi, tapi tidak digunakan dalam perhitungan bagi hasil.

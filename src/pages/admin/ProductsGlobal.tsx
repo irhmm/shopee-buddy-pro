@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Pagination } from '@/components/Pagination';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
-import { Package, Search, Download, Store, TrendingUp, Users } from 'lucide-react';
+import { Package, Search, Download, Store, TrendingUp, Users, ArrowUpDown } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import {
   Select,
@@ -40,6 +40,7 @@ export default function ProductsGlobal() {
   const [currentPage, setCurrentPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterFranchise, setFilterFranchise] = useState<string>('all');
+  const [sortMargin, setSortMargin] = useState<'default' | 'highest' | 'lowest'>('default');
 
   useEffect(() => {
     fetchData();
@@ -94,7 +95,7 @@ export default function ProductsGlobal() {
     }
   };
 
-  // Filter and search products
+  // Filter, search, and sort products
   const filteredProducts = useMemo(() => {
     let result = products;
 
@@ -113,13 +114,22 @@ export default function ProductsGlobal() {
       );
     }
 
+    // Sort by margin
+    if (sortMargin !== 'default') {
+      result = [...result].sort((a, b) => {
+        const marginA = a.price > 0 ? ((a.price - a.hpp) / a.price) * 100 : 0;
+        const marginB = b.price > 0 ? ((b.price - b.hpp) / b.price) * 100 : 0;
+        return sortMargin === 'highest' ? marginB - marginA : marginA - marginB;
+      });
+    }
+
     return result;
-  }, [products, filterFranchise, searchQuery]);
+  }, [products, filterFranchise, searchQuery, sortMargin]);
 
   // Reset page when filter changes
   useEffect(() => {
     setCurrentPage(1);
-  }, [filterFranchise, searchQuery]);
+  }, [filterFranchise, searchQuery, sortMargin]);
 
   // Pagination
   const totalPages = Math.ceil(filteredProducts.length / ITEMS_PER_PAGE);
@@ -210,6 +220,18 @@ export default function ProductsGlobal() {
                 {f.name}
               </SelectItem>
             ))}
+          </SelectContent>
+        </Select>
+
+        <Select value={sortMargin} onValueChange={(val) => setSortMargin(val as 'default' | 'highest' | 'lowest')}>
+          <SelectTrigger className="w-full sm:w-[180px]">
+            <ArrowUpDown className="w-4 h-4 mr-2" />
+            <SelectValue placeholder="Urutkan Margin" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="default">Default</SelectItem>
+            <SelectItem value="highest">Margin Terbesar</SelectItem>
+            <SelectItem value="lowest">Margin Terkecil</SelectItem>
           </SelectContent>
         </Select>
 

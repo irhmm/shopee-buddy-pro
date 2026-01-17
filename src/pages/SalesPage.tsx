@@ -26,7 +26,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
 
-const ITEMS_PER_PAGE = 10;
+const ITEMS_PER_PAGE = 25;
 
 export default function SalesPage() {
   const { products, sales, addSale, deleteSale, settings, loading } = useApp();

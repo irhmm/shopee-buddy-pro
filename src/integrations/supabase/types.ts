@@ -18,20 +18,61 @@ export type Database = {
         Row: {
           admin_fee_percent: number
           fixed_deduction: number
+          franchise_id: string | null
           id: string
           updated_at: string
         }
         Insert: {
           admin_fee_percent?: number
           fixed_deduction?: number
+          franchise_id?: string | null
           id?: string
           updated_at?: string
         }
         Update: {
           admin_fee_percent?: number
           fixed_deduction?: number
+          franchise_id?: string | null
           id?: string
           updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "admin_settings_franchise_id_fkey"
+            columns: ["franchise_id"]
+            isOneToOne: true
+            referencedRelation: "franchises"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      franchises: {
+        Row: {
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          profit_sharing_percent: number | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          profit_sharing_percent?: number | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          profit_sharing_percent?: number | null
+          updated_at?: string | null
+          user_id?: string
         }
         Relationships: []
       }
@@ -39,6 +80,7 @@ export type Database = {
         Row: {
           code: string
           created_at: string
+          franchise_id: string | null
           hpp: number
           id: string
           name: string
@@ -47,6 +89,7 @@ export type Database = {
         Insert: {
           code: string
           created_at?: string
+          franchise_id?: string | null
           hpp?: number
           id?: string
           name: string
@@ -55,16 +98,26 @@ export type Database = {
         Update: {
           code?: string
           created_at?: string
+          franchise_id?: string | null
           hpp?: number
           id?: string
           name?: string
           price?: number
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "products_franchise_id_fkey"
+            columns: ["franchise_id"]
+            isOneToOne: false
+            referencedRelation: "franchises"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       sales: {
         Row: {
           created_at: string
+          franchise_id: string | null
           hpp_per_unit: number
           id: string
           net_profit: number
@@ -79,6 +132,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          franchise_id?: string | null
           hpp_per_unit?: number
           id?: string
           net_profit?: number
@@ -93,6 +147,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          franchise_id?: string | null
           hpp_per_unit?: number
           id?: string
           net_profit?: number
@@ -107,6 +162,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "sales_franchise_id_fkey"
+            columns: ["franchise_id"]
+            isOneToOne: false
+            referencedRelation: "franchises"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "sales_product_id_fkey"
             columns: ["product_id"]
             isOneToOne: false
@@ -115,15 +177,43 @@ export type Database = {
           },
         ]
       }
+      user_roles: {
+        Row: {
+          created_at: string | null
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_user_franchise_id: { Args: { _user_id: string }; Returns: string }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "super_admin" | "franchise"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -250,6 +340,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["super_admin", "franchise"],
+    },
   },
 } as const

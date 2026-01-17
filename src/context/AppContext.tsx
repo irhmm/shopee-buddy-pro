@@ -45,7 +45,7 @@ interface AppContextType {
   settings: AdminSettings;
   updateSettings: (settings: AdminSettings) => Promise<void>;
   sales: SaleRecord[];
-  addSale: (productId: string, quantity: number) => Promise<void>;
+  addSale: (productId: string, quantity: number, saleDate?: Date) => Promise<void>;
   deleteSale: (id: string) => Promise<void>;
   loading: boolean;
   refreshData: () => Promise<void>;
@@ -228,7 +228,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     await fetchSettings();
   };
 
-  const addSale = async (productId: string, quantity: number) => {
+  const addSale = async (productId: string, quantity: number, saleDate?: Date) => {
     const product = products.find((p) => p.id === productId);
     if (!product) return;
 
@@ -247,6 +247,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       total_hpp: totalHpp,
       total_admin_fee: 0, // Will be calculated dynamically
       net_profit: 0, // Will be calculated dynamically
+      created_at: saleDate ? saleDate.toISOString() : new Date().toISOString(),
     });
 
     if (error) {

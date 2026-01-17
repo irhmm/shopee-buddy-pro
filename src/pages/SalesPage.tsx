@@ -5,6 +5,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Pagination } from '@/components/Pagination';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import {
   Select,
   SelectContent,
@@ -12,7 +14,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Plus, Trash2, BarChart3, TrendingUp, DollarSign, ShoppingCart, Package, Loader2, Calendar } from 'lucide-react';
+import { Plus, Trash2, BarChart3, TrendingUp, DollarSign, ShoppingCart, Package, Loader2, Calendar as CalendarIcon } from 'lucide-react';
+import { format } from 'date-fns';
+import { id } from 'date-fns/locale';
+import { cn } from '@/lib/utils';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -51,9 +56,10 @@ const generateMonthOptions = () => {
 export default function SalesPage() {
   const { products, sales, addSale, deleteSale, settings, loading } = useApp();
   const [selectedProductId, setSelectedProductId] = useState('');
-  const [quantity, setQuantity] = useState('');
+  const [quantity, setQuantity] = useState('1');
   const [currentPage, setCurrentPage] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [saleDate, setSaleDate] = useState<Date>(new Date());
   
   // Month filter state - default to current month
   const [selectedMonth, setSelectedMonth] = useState(() => {
@@ -175,9 +181,10 @@ export default function SalesPage() {
 
     setIsSubmitting(true);
     try {
-      await addSale(selectedProductId, parseInt(quantity));
+      await addSale(selectedProductId, parseInt(quantity), saleDate);
       setSelectedProductId('');
-      setQuantity('');
+      setQuantity('1');
+      setSaleDate(new Date());
       toast.success('Penjualan berhasil ditambahkan');
     } finally {
       setIsSubmitting(false);
@@ -303,12 +310,42 @@ export default function SalesPage() {
         </div>
       </div>
 
-      {/* Add Sale Form */}
+      {/* Add Sale Form - Compact */}
       <div className="form-section mb-6">
-        <h2 className="font-semibold text-foreground mb-4">Tambah Penjualan</h2>
-        <form onSubmit={handleAddSale} className="flex flex-col sm:flex-row gap-4">
-          <div className="flex-1 space-y-2">
-            <Label htmlFor="product">Pilih Produk</Label>
+        <form onSubmit={handleAddSale} className="flex flex-wrap items-end gap-3">
+          {/* Date Picker */}
+          <div className="space-y-1">
+            <Label className="text-xs text-muted-foreground">Tanggal</Label>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  disabled={isSubmitting}
+                  className={cn(
+                    "w-[130px] justify-start text-left font-normal",
+                    !saleDate && "text-muted-foreground"
+                  )}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {format(saleDate, "dd MMM yy", { locale: id })}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0 bg-popover" align="start">
+                <Calendar
+                  mode="single"
+                  selected={saleDate}
+                  onSelect={(date) => date && setSaleDate(date)}
+                  disabled={(date) => date > new Date()}
+                  initialFocus
+                  className={cn("p-3 pointer-events-auto")}
+                />
+              </PopoverContent>
+            </Popover>
+          </div>
+
+          {/* Product Select */}
+          <div className="flex-1 min-w-[200px] space-y-1">
+            <Label className="text-xs text-muted-foreground">Produk</Label>
             <Select value={selectedProductId} onValueChange={setSelectedProductId} disabled={isSubmitting}>
               <SelectTrigger>
                 <SelectValue placeholder="Pilih produk..." />
@@ -321,35 +358,37 @@ export default function SalesPage() {
                 ) : (
                   products.map((product) => (
                     <SelectItem key={product.id} value={product.id}>
-                      {product.name} ({product.code}) - {formatCurrency(product.price)}
+                      {product.name} - {formatCurrency(product.price)}
                     </SelectItem>
                   ))
                 )}
               </SelectContent>
             </Select>
           </div>
-          <div className="w-full sm:w-32 space-y-2">
-            <Label htmlFor="quantity">Jumlah</Label>
+
+          {/* Quantity */}
+          <div className="w-20 space-y-1">
+            <Label className="text-xs text-muted-foreground">Qty</Label>
             <Input
-              id="quantity"
               type="number"
               min="1"
               value={quantity}
               onChange={(e) => setQuantity(e.target.value)}
-              placeholder="0"
+              placeholder="1"
               disabled={isSubmitting}
+              className="text-center"
             />
           </div>
-          <div className="flex items-end">
-            <Button type="submit" disabled={products.length === 0 || isSubmitting} className="gap-2 w-full sm:w-auto">
-              {isSubmitting ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : (
-                <Plus size={18} />
-              )}
-              Tambah
-            </Button>
-          </div>
+
+          {/* Submit Button */}
+          <Button type="submit" disabled={products.length === 0 || isSubmitting} className="gap-2">
+            {isSubmitting ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <Plus size={18} />
+            )}
+            Tambah
+          </Button>
         </form>
         {products.length === 0 && (
           <p className="mt-3 text-sm text-muted-foreground">

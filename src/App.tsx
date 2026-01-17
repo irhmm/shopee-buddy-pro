@@ -5,32 +5,35 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AppProvider } from "@/context/AppContext";
 import { Layout } from "@/components/Layout";
+import { useState } from "react";
 import ProductsPage from "./pages/ProductsPage";
 import SettingsPage from "./pages/SettingsPage";
 import SalesPage from "./pages/SalesPage";
 import NotFound from "./pages/NotFound";
 
-const queryClient = new QueryClient();
+const App = () => {
+  const [queryClient] = useState(() => new QueryClient());
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <AppProvider>
-        <Toaster />
-        <Sonner position="top-right" />
-        <BrowserRouter>
-          <Layout>
-            <Routes>
-              <Route path="/" element={<ProductsPage />} />
-              <Route path="/settings" element={<SettingsPage />} />
-              <Route path="/sales" element={<SalesPage />} />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </Layout>
-        </BrowserRouter>
-      </AppProvider>
-    </TooltipProvider>
-  </QueryClientProvider>
-);
+  return (
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <AppProvider>
+          <Toaster />
+          <Sonner position="top-right" />
+          <BrowserRouter>
+            <Layout>
+              <Routes>
+                <Route path="/" element={<ProductsPage />} />
+                <Route path="/settings" element={<SettingsPage />} />
+                <Route path="/sales" element={<SalesPage />} />
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </Layout>
+          </BrowserRouter>
+        </AppProvider>
+      </TooltipProvider>
+    </QueryClientProvider>
+  );
+};
 
 export default App;

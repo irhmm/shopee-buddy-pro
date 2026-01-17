@@ -21,7 +21,15 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import { Plus, Trash2, BarChart3, TrendingUp, DollarSign, ShoppingCart, Package, Loader2, Calendar as CalendarIcon } from 'lucide-react';
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from '@/components/ui/command';
+import { Plus, Trash2, BarChart3, TrendingUp, DollarSign, ShoppingCart, Package, Loader2, Calendar as CalendarIcon, Check, ChevronsUpDown } from 'lucide-react';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
@@ -364,27 +372,60 @@ export default function SalesPage() {
                 </Popover>
               </div>
 
-              {/* Product Select */}
+              {/* Product Select with Search */}
               <div className="space-y-2">
                 <Label>Produk</Label>
-                <Select value={selectedProductId} onValueChange={setSelectedProductId} disabled={isSubmitting}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Pilih produk..." />
-                  </SelectTrigger>
-                  <SelectContent className="bg-popover z-[100]">
-                    {products.length === 0 ? (
-                      <SelectItem value="none" disabled>
-                        Belum ada produk
-                      </SelectItem>
-                    ) : (
-                      products.map((product) => (
-                        <SelectItem key={product.id} value={product.id}>
-                          [{product.code}] {product.name} - {formatCurrency(product.price)}
-                        </SelectItem>
-                      ))
-                    )}
-                  </SelectContent>
-                </Select>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      disabled={isSubmitting}
+                      className={cn(
+                        "w-full justify-between font-normal",
+                        !selectedProductId && "text-muted-foreground"
+                      )}
+                    >
+                      {selectedProductId
+                        ? (() => {
+                            const product = products.find((p) => p.id === selectedProductId);
+                            return product ? `[${product.code}] ${product.name}` : "Pilih produk...";
+                          })()
+                        : "Pilih produk..."}
+                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-full p-0 bg-popover z-[100]" align="start">
+                    <Command>
+                      <CommandInput placeholder="Cari produk..." />
+                      <CommandList>
+                        <CommandEmpty>Produk tidak ditemukan.</CommandEmpty>
+                        <CommandGroup>
+                          {products.map((product) => (
+                            <CommandItem
+                              key={product.id}
+                              value={`${product.code} ${product.name}`}
+                              onSelect={() => {
+                                setSelectedProductId(product.id);
+                              }}
+                            >
+                              <Check
+                                className={cn(
+                                  "mr-2 h-4 w-4",
+                                  selectedProductId === product.id ? "opacity-100" : "opacity-0"
+                                )}
+                              />
+                              <div className="flex flex-col">
+                                <span className="font-medium">[{product.code}] {product.name}</span>
+                                <span className="text-xs text-muted-foreground">{formatCurrency(product.price)}</span>
+                              </div>
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
                 {products.length === 0 && (
                   <p className="text-sm text-muted-foreground">
                     Tambahkan produk terlebih dahulu di halaman "Add Produk"

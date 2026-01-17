@@ -1,0 +1,315 @@
+import { useState } from 'react';
+import { useApp } from '@/context/AppContext';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Pagination } from '@/components/Pagination';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Plus, Trash2, BarChart3, TrendingUp, DollarSign, ShoppingCart, Package } from 'lucide-react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
+import { toast } from 'sonner';
+
+const ITEMS_PER_PAGE = 10;
+
+export default function SalesPage() {
+  const { products, sales, addSale, deleteSale, settings } = useApp();
+  const [selectedProductId, setSelectedProductId] = useState('');
+  const [quantity, setQuantity] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+
+  const totalPages = Math.ceil(sales.length / ITEMS_PER_PAGE);
+  const paginatedSales = [...sales]
+    .reverse()
+    .slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
+
+  const handleAddSale = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedProductId || !quantity) {
+      toast.error('Pilih produk dan masukkan jumlah');
+      return;
+    }
+    addSale(selectedProductId, parseInt(quantity));
+    setSelectedProductId('');
+    setQuantity('');
+    toast.success('Penjualan berhasil ditambahkan');
+  };
+
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('id-ID', {
+      style: 'currency',
+      currency: 'IDR',
+      minimumFractionDigits: 0,
+    }).format(value);
+  };
+
+  // Calculate totals
+  const totals = sales.reduce(
+    (acc, sale) => ({
+      totalSales: acc.totalSales + sale.totalSales,
+      totalHpp: acc.totalHpp + sale.totalHpp,
+      totalAdminFee: acc.totalAdminFee + sale.totalAdminFee,
+      netProfit: acc.netProfit + sale.netProfit,
+    }),
+    { totalSales: 0, totalHpp: 0, totalAdminFee: 0, netProfit: 0 }
+  );
+
+  return (
+    <div className="animate-fade-in">
+      <div className="page-header">
+        <h1 className="page-title">Rekap Penjualan</h1>
+        <p className="page-subtitle">Catat dan lihat ringkasan penjualan Shopee</p>
+      </div>
+
+      {/* Summary Cards */}
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-6">
+        <div className="stat-card">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+              <ShoppingCart className="w-5 h-5 text-primary" />
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">Total Penjualan</p>
+              <p className="text-lg font-bold text-foreground">{formatCurrency(totals.totalSales)}</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="stat-card">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-secondary flex items-center justify-center">
+              <Package className="w-5 h-5 text-secondary-foreground" />
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">Total HPP</p>
+              <p className="text-lg font-bold text-foreground">{formatCurrency(totals.totalHpp)}</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="stat-card">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-destructive/10 flex items-center justify-center">
+              <DollarSign className="w-5 h-5 text-destructive" />
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">Biaya Admin</p>
+              <p className="text-lg font-bold text-foreground">{formatCurrency(totals.totalAdminFee)}</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="stat-card">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-success/10 flex items-center justify-center">
+              <TrendingUp className="w-5 h-5 text-success" />
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">Laba Bersih</p>
+              <p className={`text-lg font-bold ${totals.netProfit >= 0 ? 'text-success' : 'text-destructive'}`}>
+                {formatCurrency(totals.netProfit)}
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Add Sale Form */}
+      <div className="form-section mb-6">
+        <h2 className="font-semibold text-foreground mb-4">Tambah Penjualan</h2>
+        <form onSubmit={handleAddSale} className="flex flex-col sm:flex-row gap-4">
+          <div className="flex-1 space-y-2">
+            <Label htmlFor="product">Pilih Produk</Label>
+            <Select value={selectedProductId} onValueChange={setSelectedProductId}>
+              <SelectTrigger>
+                <SelectValue placeholder="Pilih produk..." />
+              </SelectTrigger>
+              <SelectContent className="bg-popover">
+                {products.length === 0 ? (
+                  <SelectItem value="none" disabled>
+                    Belum ada produk
+                  </SelectItem>
+                ) : (
+                  products.map((product) => (
+                    <SelectItem key={product.id} value={product.id}>
+                      {product.name} ({product.code}) - {formatCurrency(product.price)}
+                    </SelectItem>
+                  ))
+                )}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="w-full sm:w-32 space-y-2">
+            <Label htmlFor="quantity">Jumlah</Label>
+            <Input
+              id="quantity"
+              type="number"
+              min="1"
+              value={quantity}
+              onChange={(e) => setQuantity(e.target.value)}
+              placeholder="0"
+            />
+          </div>
+          <div className="flex items-end">
+            <Button type="submit" disabled={products.length === 0} className="gap-2 w-full sm:w-auto">
+              <Plus size={18} />
+              Tambah
+            </Button>
+          </div>
+        </form>
+        {products.length === 0 && (
+          <p className="mt-3 text-sm text-muted-foreground">
+            Tambahkan produk terlebih dahulu di halaman "Add Produk"
+          </p>
+        )}
+      </div>
+
+      {/* Sales Table */}
+      <div className="table-container">
+        {sales.length === 0 ? (
+          <div className="p-12 text-center">
+            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-secondary flex items-center justify-center">
+              <BarChart3 size={32} className="text-muted-foreground" />
+            </div>
+            <h3 className="text-lg font-medium text-foreground mb-1">Belum ada penjualan</h3>
+            <p className="text-muted-foreground text-sm">
+              Tambahkan penjualan untuk melihat rekap
+            </p>
+          </div>
+        ) : (
+          <>
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="bg-secondary/50">
+                    <th className="text-left px-4 py-3 font-medium text-foreground text-sm">Produk</th>
+                    <th className="text-center px-4 py-3 font-medium text-foreground text-sm">Qty</th>
+                    <th className="text-right px-4 py-3 font-medium text-foreground text-sm">Penjualan</th>
+                    <th className="text-right px-4 py-3 font-medium text-foreground text-sm">HPP</th>
+                    <th className="text-right px-4 py-3 font-medium text-foreground text-sm">Admin</th>
+                    <th className="text-right px-4 py-3 font-medium text-foreground text-sm">Laba</th>
+                    <th className="text-center px-4 py-3 font-medium text-foreground text-sm">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {paginatedSales.map((sale) => (
+                    <tr key={sale.id} className="border-t border-border hover:bg-secondary/30 transition-colors">
+                      <td className="px-4 py-3">
+                        <div>
+                          <p className="font-medium text-foreground">{sale.productName}</p>
+                          <p className="text-xs text-muted-foreground">{sale.productCode}</p>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 text-center">
+                        <span className="inline-flex items-center px-2 py-1 rounded-md bg-secondary text-sm font-medium">
+                          {sale.quantity}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-right text-sm font-medium text-foreground">
+                        {formatCurrency(sale.totalSales)}
+                      </td>
+                      <td className="px-4 py-3 text-right text-sm text-muted-foreground">
+                        {formatCurrency(sale.totalHpp)}
+                      </td>
+                      <td className="px-4 py-3 text-right text-sm text-destructive">
+                        -{formatCurrency(sale.totalAdminFee)}
+                      </td>
+                      <td className="px-4 py-3 text-right">
+                        <span
+                          className={`text-sm font-semibold ${
+                            sale.netProfit >= 0 ? 'text-success' : 'text-destructive'
+                          }`}
+                        >
+                          {formatCurrency(sale.netProfit)}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex justify-center">
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+                              >
+                                <Trash2 size={16} />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Hapus Penjualan?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Data penjualan ini akan dihapus permanen. Tindakan ini tidak dapat dibatalkan.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Batal</AlertDialogCancel>
+                                <AlertDialogAction
+                                  onClick={() => deleteSale(sale.id)}
+                                  className="bg-destructive hover:bg-destructive/90"
+                                >
+                                  Hapus
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Summary Footer */}
+            <div className="px-4 py-4 border-t border-border bg-secondary/30">
+              <div className="flex flex-wrap items-center justify-between gap-4">
+                <div className="flex flex-wrap gap-6 text-sm">
+                  <div>
+                    <span className="text-muted-foreground">Total Transaksi:</span>
+                    <span className="ml-2 font-semibold text-foreground">{sales.length}</span>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Admin Fee:</span>
+                    <span className="ml-2 font-semibold text-foreground">{settings.adminFeePercent}% + {formatCurrency(settings.fixedDeduction)}</span>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <span className="text-sm text-muted-foreground">Total Laba Bersih:</span>
+                  <span className={`ml-2 text-lg font-bold ${totals.netProfit >= 0 ? 'text-success' : 'text-destructive'}`}>
+                    {formatCurrency(totals.netProfit)}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {totalPages > 1 && (
+              <div className="px-4 py-4 border-t border-border">
+                <Pagination
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  onPageChange={setCurrentPage}
+                />
+              </div>
+            )}
+          </>
+        )}
+      </div>
+    </div>
+  );
+}

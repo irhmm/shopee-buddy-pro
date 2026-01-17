@@ -411,133 +411,6 @@ export default function SalesPage() {
               </Select>
             </div>
           </div>
-          
-          {/* Filter & Export Buttons */}
-          <div className="flex items-center gap-2">
-            {/* Filter Button */}
-            <Popover open={isFilterOpen} onOpenChange={setIsFilterOpen}>
-              <PopoverTrigger asChild>
-                <Button variant="outline" className="gap-2">
-                  <Filter size={16} />
-                  Filter
-                  {activeFiltersCount > 0 && (
-                    <span className="ml-1 h-5 w-5 rounded-full bg-primary text-primary-foreground text-xs flex items-center justify-center">
-                      {activeFiltersCount}
-                    </span>
-                  )}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-80 bg-popover" align="start">
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <h4 className="font-medium">Filter Data</h4>
-                    {activeFiltersCount > 0 && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={handleResetFilters}
-                        className="h-auto p-1 text-xs text-muted-foreground"
-                      >
-                        Reset
-                      </Button>
-                    )}
-                  </div>
-                  
-                  {/* Filter by Product Code */}
-                  <div className="space-y-2">
-                    <Label className="text-sm">Kode Produk</Label>
-                    <Select value={filterCode} onValueChange={setFilterCode}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Semua kode" />
-                      </SelectTrigger>
-                      <SelectContent className="bg-popover">
-                        <SelectItem value="">Semua kode</SelectItem>
-                        {uniqueProductCodes.map((code) => (
-                          <SelectItem key={code} value={code}>
-                            {code}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  
-                  {/* Filter by Product Name */}
-                  <div className="space-y-2">
-                    <Label className="text-sm">Nama Produk</Label>
-                    <Select value={filterName} onValueChange={setFilterName}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Semua produk" />
-                      </SelectTrigger>
-                      <SelectContent className="bg-popover">
-                        <SelectItem value="">Semua produk</SelectItem>
-                        {uniqueProductNames.map((name) => (
-                          <SelectItem key={name} value={name}>
-                            {name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  
-                  {/* Filter by Date */}
-                  <div className="space-y-2">
-                    <Label className="text-sm">Tanggal</Label>
-                    <Popover open={isFilterDateOpen} onOpenChange={setIsFilterDateOpen}>
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant="outline"
-                          className={cn(
-                            "w-full justify-start text-left font-normal",
-                            !filterDate && "text-muted-foreground"
-                          )}
-                        >
-                          <CalendarIcon className="mr-2 h-4 w-4" />
-                          {filterDate ? format(filterDate, "dd MMMM yyyy", { locale: id }) : "Pilih tanggal..."}
-                          {filterDate && (
-                            <X
-                              className="ml-auto h-4 w-4 hover:text-destructive"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setFilterDate(undefined);
-                              }}
-                            />
-                          )}
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0 bg-popover z-[100]" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={filterDate}
-                          onSelect={(date) => {
-                            setFilterDate(date);
-                            setIsFilterDateOpen(false);
-                          }}
-                          initialFocus
-                          className="pointer-events-auto"
-                        />
-                      </PopoverContent>
-                    </Popover>
-                  </div>
-                  
-                  {/* Apply Button */}
-                  <Button onClick={handleApplyFilters} className="w-full">
-                    Terapkan Filter
-                  </Button>
-                </div>
-              </PopoverContent>
-            </Popover>
-
-            {/* Export Button */}
-            <Button
-              variant="default"
-              className="gap-2"
-              onClick={handleExportExcel}
-              disabled={filteredSales.length === 0}
-            >
-              <Download size={16} />
-              Export
-            </Button>
-          </div>
         </div>
       </div>
 
@@ -594,8 +467,133 @@ export default function SalesPage() {
         </div>
       </div>
 
-      {/* Add Sale Button + Dialog */}
-      <div className="mb-6 flex justify-end">
+      {/* Action Buttons: Filter, Export, Add */}
+      <div className="mb-6 flex justify-end gap-2">
+        {/* Filter Button */}
+        <Popover open={isFilterOpen} onOpenChange={setIsFilterOpen}>
+          <PopoverTrigger asChild>
+            <Button variant="outline" className="gap-2">
+              <Filter size={16} />
+              Filter
+              {activeFiltersCount > 0 && (
+                <span className="ml-1 h-5 w-5 rounded-full bg-primary text-primary-foreground text-xs flex items-center justify-center">
+                  {activeFiltersCount}
+                </span>
+              )}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-80 bg-popover" align="end">
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h4 className="font-medium">Filter Data</h4>
+                {activeFiltersCount > 0 && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleResetFilters}
+                    className="h-auto p-1 text-xs text-muted-foreground"
+                  >
+                    Reset
+                  </Button>
+                )}
+              </div>
+              
+              {/* Filter by Product Code */}
+              <div className="space-y-2">
+                <Label className="text-sm">Kode Produk</Label>
+                <Select value={filterCode} onValueChange={setFilterCode}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Semua kode" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-popover">
+                    <SelectItem value="">Semua kode</SelectItem>
+                    {uniqueProductCodes.map((code) => (
+                      <SelectItem key={code} value={code}>
+                        {code}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              {/* Filter by Product Name */}
+              <div className="space-y-2">
+                <Label className="text-sm">Nama Produk</Label>
+                <Select value={filterName} onValueChange={setFilterName}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Semua produk" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-popover">
+                    <SelectItem value="">Semua produk</SelectItem>
+                    {uniqueProductNames.map((name) => (
+                      <SelectItem key={name} value={name}>
+                        {name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              {/* Filter by Date */}
+              <div className="space-y-2">
+                <Label className="text-sm">Tanggal</Label>
+                <Popover open={isFilterDateOpen} onOpenChange={setIsFilterDateOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full justify-start text-left font-normal",
+                        !filterDate && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {filterDate ? format(filterDate, "dd MMMM yyyy", { locale: id }) : "Pilih tanggal..."}
+                      {filterDate && (
+                        <X
+                          className="ml-auto h-4 w-4 hover:text-destructive"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setFilterDate(undefined);
+                          }}
+                        />
+                      )}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0 bg-popover z-[100]" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={filterDate}
+                      onSelect={(date) => {
+                        setFilterDate(date);
+                        setIsFilterDateOpen(false);
+                      }}
+                      initialFocus
+                      className="pointer-events-auto"
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+              
+              {/* Apply Button */}
+              <Button onClick={handleApplyFilters} className="w-full">
+                Terapkan Filter
+              </Button>
+            </div>
+          </PopoverContent>
+        </Popover>
+
+        {/* Export Button */}
+        <Button
+          variant="outline"
+          className="gap-2"
+          onClick={handleExportExcel}
+          disabled={filteredSales.length === 0}
+        >
+          <Download size={16} />
+          Export
+        </Button>
+
+        {/* Add Sale Dialog */}
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
             <Button className="gap-2">

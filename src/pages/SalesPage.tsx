@@ -629,17 +629,15 @@ export default function SalesPage() {
               </div>
             </div>
 
-            {totalPages > 1 && (
-              <div className="px-4 py-4 border-t border-border">
-                <Pagination
-                  currentPage={currentPage}
-                  totalPages={totalPages}
-                  totalItems={filteredSales.length}
-                  itemsPerPage={ITEMS_PER_PAGE}
-                  onPageChange={setCurrentPage}
-                />
-              </div>
-            )}
+            <div className="px-4 py-4 border-t border-border">
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                totalItems={filteredSales.length}
+                itemsPerPage={ITEMS_PER_PAGE}
+                onPageChange={setCurrentPage}
+              />
+            </div>
           </>
         )}
       </div>

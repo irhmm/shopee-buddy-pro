@@ -14,6 +14,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
 import { Plus, Trash2, BarChart3, TrendingUp, DollarSign, ShoppingCart, Package, Loader2, Calendar as CalendarIcon } from 'lucide-react';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
@@ -60,6 +67,7 @@ export default function SalesPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [saleDate, setSaleDate] = useState<Date>(new Date());
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
   
   // Month filter state - default to current month
   const [selectedMonth, setSelectedMonth] = useState(() => {
@@ -185,6 +193,7 @@ export default function SalesPage() {
       setSelectedProductId('');
       setQuantity('1');
       setSaleDate(new Date());
+      setIsDialogOpen(false);
       toast.success('Penjualan berhasil ditambahkan');
     } finally {
       setIsSubmitting(false);
@@ -240,7 +249,7 @@ export default function SalesPage() {
             <p className="page-subtitle">Catat dan lihat ringkasan penjualan Shopee</p>
           </div>
           <div className="flex items-center gap-2">
-            <Calendar className="w-4 h-4 text-muted-foreground" />
+            <CalendarIcon className="w-4 h-4 text-muted-foreground" />
             <Select value={selectedMonth} onValueChange={handleMonthChange}>
               <SelectTrigger className="w-[180px]">
                 <SelectValue placeholder="Pilih bulan..." />
@@ -310,91 +319,119 @@ export default function SalesPage() {
         </div>
       </div>
 
-      {/* Add Sale Form - Compact */}
-      <div className="form-section mb-6">
-        <form onSubmit={handleAddSale} className="flex flex-wrap items-end gap-3">
-          {/* Date Picker */}
-          <div className="space-y-1">
-            <Label className="text-xs text-muted-foreground">Tanggal</Label>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  disabled={isSubmitting}
-                  className={cn(
-                    "w-[130px] justify-start text-left font-normal",
-                    !saleDate && "text-muted-foreground"
-                  )}
-                >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {format(saleDate, "dd MMM yy", { locale: id })}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0 bg-popover" align="start">
-                <Calendar
-                  mode="single"
-                  selected={saleDate}
-                  onSelect={(date) => date && setSaleDate(date)}
-                  disabled={(date) => date > new Date()}
-                  initialFocus
-                  className={cn("p-3 pointer-events-auto")}
-                />
-              </PopoverContent>
-            </Popover>
-          </div>
-
-          {/* Product Select */}
-          <div className="flex-1 min-w-[200px] space-y-1">
-            <Label className="text-xs text-muted-foreground">Produk</Label>
-            <Select value={selectedProductId} onValueChange={setSelectedProductId} disabled={isSubmitting}>
-              <SelectTrigger>
-                <SelectValue placeholder="Pilih produk..." />
-              </SelectTrigger>
-              <SelectContent className="bg-popover">
-                {products.length === 0 ? (
-                  <SelectItem value="none" disabled>
-                    Belum ada produk
-                  </SelectItem>
-                ) : (
-                  products.map((product) => (
-                    <SelectItem key={product.id} value={product.id}>
-                      {product.name} - {formatCurrency(product.price)}
-                    </SelectItem>
-                  ))
-                )}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Quantity */}
-          <div className="w-20 space-y-1">
-            <Label className="text-xs text-muted-foreground">Qty</Label>
-            <Input
-              type="number"
-              min="1"
-              value={quantity}
-              onChange={(e) => setQuantity(e.target.value)}
-              placeholder="1"
-              disabled={isSubmitting}
-              className="text-center"
-            />
-          </div>
-
-          {/* Submit Button */}
-          <Button type="submit" disabled={products.length === 0 || isSubmitting} className="gap-2">
-            {isSubmitting ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
+      {/* Add Sale Button + Dialog */}
+      <div className="mb-6 flex justify-end">
+        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <DialogTrigger asChild>
+            <Button className="gap-2">
               <Plus size={18} />
-            )}
-            Tambah
-          </Button>
-        </form>
-        {products.length === 0 && (
-          <p className="mt-3 text-sm text-muted-foreground">
-            Tambahkan produk terlebih dahulu di halaman "Add Produk"
-          </p>
-        )}
+              Tambah Rekap
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Tambah Penjualan Baru</DialogTitle>
+            </DialogHeader>
+            
+            <form onSubmit={handleAddSale} className="space-y-4">
+              {/* Date Picker */}
+              <div className="space-y-2">
+                <Label>Tanggal</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      disabled={isSubmitting}
+                      className={cn(
+                        "w-full justify-start text-left font-normal",
+                        !saleDate && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {format(saleDate, "dd MMMM yyyy", { locale: id })}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0 bg-popover z-[100]" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={saleDate}
+                      onSelect={(date) => date && setSaleDate(date)}
+                      disabled={(date) => date > new Date()}
+                      initialFocus
+                      className="pointer-events-auto"
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+
+              {/* Product Select */}
+              <div className="space-y-2">
+                <Label>Produk</Label>
+                <Select value={selectedProductId} onValueChange={setSelectedProductId} disabled={isSubmitting}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Pilih produk..." />
+                  </SelectTrigger>
+                  <SelectContent className="bg-popover z-[100]">
+                    {products.length === 0 ? (
+                      <SelectItem value="none" disabled>
+                        Belum ada produk
+                      </SelectItem>
+                    ) : (
+                      products.map((product) => (
+                        <SelectItem key={product.id} value={product.id}>
+                          {product.name} - {formatCurrency(product.price)}
+                        </SelectItem>
+                      ))
+                    )}
+                  </SelectContent>
+                </Select>
+                {products.length === 0 && (
+                  <p className="text-sm text-muted-foreground">
+                    Tambahkan produk terlebih dahulu di halaman "Add Produk"
+                  </p>
+                )}
+              </div>
+
+              {/* Quantity */}
+              <div className="space-y-2">
+                <Label>Jumlah (Qty)</Label>
+                <Input
+                  type="number"
+                  min="1"
+                  value={quantity}
+                  onChange={(e) => setQuantity(e.target.value)}
+                  placeholder="1"
+                  disabled={isSubmitting}
+                />
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex gap-2 pt-2">
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={() => setIsDialogOpen(false)} 
+                  className="flex-1"
+                  disabled={isSubmitting}
+                >
+                  Batal
+                </Button>
+                <Button 
+                  type="submit" 
+                  disabled={products.length === 0 || !selectedProductId || isSubmitting} 
+                  className="flex-1 gap-2"
+                >
+                  {isSubmitting ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Plus size={18} />
+                  )}
+                  Simpan
+                </Button>
+              </div>
+            </form>
+          </DialogContent>
+        </Dialog>
       </div>
 
       {/* Sales Table */}

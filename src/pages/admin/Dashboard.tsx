@@ -423,10 +423,10 @@ export default function AdminDashboard() {
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-2">
                           <div 
-                            className="w-3 h-3 rounded-full" 
+                            className="w-2 h-2 rounded-full flex-shrink-0" 
                             style={{ backgroundColor: COLORS[index % COLORS.length] }}
                           />
-                          <span className="font-medium text-foreground">{franchise.name}</span>
+                          <span className="text-sm font-medium text-foreground">{franchise.name}</span>
                         </div>
                       </td>
                       <td className="px-4 py-3 text-right text-sm">{formatCurrency(franchise.totalSales)}</td>

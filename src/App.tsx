@@ -9,6 +9,7 @@ import { Layout } from "@/components/Layout";
 import ProductsPage from "./pages/ProductsPage";
 import SettingsPage from "./pages/SettingsPage";
 import SalesPage from "./pages/SalesPage";
+import LaporanKeuanganPage from "./pages/LaporanKeuanganPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -24,6 +25,7 @@ const App: React.FC = () => {
             <Layout>
               <Routes>
                 <Route path="/" element={<SalesPage />} />
+                <Route path="/laporan" element={<LaporanKeuanganPage />} />
                 <Route path="/products" element={<ProductsPage />} />
                 <Route path="/settings" element={<SettingsPage />} />
                 <Route path="*" element={<NotFound />} />

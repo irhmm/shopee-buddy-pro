@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Package, Settings, BarChart3, Menu, X, ShoppingBag } from 'lucide-react';
+import { Package, Settings, BarChart3, Menu, X, ShoppingBag, TrendingUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface LayoutProps {
@@ -8,6 +8,7 @@ interface LayoutProps {
 }
 
 const navItems = [
+  { path: '/laporan', label: 'Laporan Keuangan', icon: TrendingUp },
   { path: '/', label: 'Rekap Penjualan', icon: BarChart3 },
   { path: '/products', label: 'Add Produk', icon: Package },
   { path: '/settings', label: 'Setting Biaya Admin', icon: Settings },

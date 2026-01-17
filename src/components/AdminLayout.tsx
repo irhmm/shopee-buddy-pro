@@ -17,7 +17,6 @@ import {
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface AdminLayoutProps {
   children: React.ReactNode;
@@ -69,7 +68,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
       <aside
         className={cn(
           "fixed top-0 left-0 h-full bg-sidebar border-r border-sidebar-border z-50 transition-all duration-300",
-          sidebarOpen ? "w-64" : "w-[72px]",
+          sidebarOpen ? "w-64" : "w-20",
           mobileMenuOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
         )}
       >
@@ -95,45 +94,27 @@ export function AdminLayout({ children }: AdminLayoutProps) {
         </div>
 
         {/* Navigation */}
-        <TooltipProvider delayDuration={0}>
-          <nav className="p-3 space-y-1">
-            {navItems.map((item) => {
-              const Icon = item.icon;
-              const isActive = location.pathname === item.path;
-              
-              const linkContent = (
-                <Link
-                  to={item.path}
-                  onClick={() => setMobileMenuOpen(false)}
-                  className={cn(
-                    "sidebar-link",
-                    isActive && "active",
-                    !sidebarOpen && "lg:justify-center lg:px-0 lg:py-3"
-                  )}
-                >
-                  <Icon size={22} className="flex-shrink-0" />
-                  {(sidebarOpen || mobileMenuOpen) && <span>{item.label}</span>}
-                </Link>
-              );
-
-              // Show tooltip only when collapsed on desktop
-              if (!sidebarOpen && !mobileMenuOpen) {
-                return (
-                  <Tooltip key={item.path}>
-                    <TooltipTrigger asChild>
-                      {linkContent}
-                    </TooltipTrigger>
-                    <TooltipContent side="right" className="font-medium">
-                      {item.label}
-                    </TooltipContent>
-                  </Tooltip>
-                );
-              }
-
-              return <div key={item.path}>{linkContent}</div>;
-            })}
-          </nav>
-        </TooltipProvider>
+        <nav className="p-3 space-y-1">
+          {navItems.map((item) => {
+            const Icon = item.icon;
+            const isActive = location.pathname === item.path;
+            return (
+              <Link
+                key={item.path}
+                to={item.path}
+                onClick={() => setMobileMenuOpen(false)}
+                className={cn(
+                  "sidebar-link",
+                  isActive && "active",
+                  !sidebarOpen && "lg:justify-center lg:px-3"
+                )}
+              >
+                <Icon size={20} className="flex-shrink-0" />
+                {(sidebarOpen || mobileMenuOpen) && <span>{item.label}</span>}
+              </Link>
+            );
+          })}
+        </nav>
 
         {/* Logout Button */}
         <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-sidebar-border">
@@ -155,7 +136,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
       <main
         className={cn(
           "min-h-screen transition-all duration-300 pt-16 lg:pt-0",
-          sidebarOpen ? "lg:ml-64" : "lg:ml-[72px]"
+          sidebarOpen ? "lg:ml-64" : "lg:ml-20"
         )}
       >
         <div className="p-4 lg:p-8">{children}</div>

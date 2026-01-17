@@ -14,7 +14,107 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      admin_settings: {
+        Row: {
+          admin_fee_percent: number
+          fixed_deduction: number
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          admin_fee_percent?: number
+          fixed_deduction?: number
+          id?: string
+          updated_at?: string
+        }
+        Update: {
+          admin_fee_percent?: number
+          fixed_deduction?: number
+          id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      products: {
+        Row: {
+          code: string
+          created_at: string
+          hpp: number
+          id: string
+          name: string
+          price: number
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          hpp?: number
+          id?: string
+          name: string
+          price?: number
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          hpp?: number
+          id?: string
+          name?: string
+          price?: number
+        }
+        Relationships: []
+      }
+      sales: {
+        Row: {
+          created_at: string
+          hpp_per_unit: number
+          id: string
+          net_profit: number
+          price_per_unit: number
+          product_code: string
+          product_id: string | null
+          product_name: string
+          quantity: number
+          total_admin_fee: number
+          total_hpp: number
+          total_sales: number
+        }
+        Insert: {
+          created_at?: string
+          hpp_per_unit?: number
+          id?: string
+          net_profit?: number
+          price_per_unit?: number
+          product_code: string
+          product_id?: string | null
+          product_name: string
+          quantity?: number
+          total_admin_fee?: number
+          total_hpp?: number
+          total_sales?: number
+        }
+        Update: {
+          created_at?: string
+          hpp_per_unit?: number
+          id?: string
+          net_profit?: number
+          price_per_unit?: number
+          product_code?: string
+          product_id?: string | null
+          product_name?: string
+          quantity?: number
+          total_admin_fee?: number
+          total_hpp?: number
+          total_sales?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sales_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never

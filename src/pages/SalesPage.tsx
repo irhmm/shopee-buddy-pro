@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Pagination } from '@/components/Pagination';
+import { LoadingSpinner } from '@/components/LoadingSpinner';
 import {
   Select,
   SelectContent,
@@ -11,7 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Plus, Trash2, BarChart3, TrendingUp, DollarSign, ShoppingCart, Package } from 'lucide-react';
+import { Plus, Trash2, BarChart3, TrendingUp, DollarSign, ShoppingCart, Package, Loader2 } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -28,26 +29,38 @@ import { toast } from 'sonner';
 const ITEMS_PER_PAGE = 10;
 
 export default function SalesPage() {
-  const { products, sales, addSale, deleteSale, settings } = useApp();
+  const { products, sales, addSale, deleteSale, settings, loading } = useApp();
   const [selectedProductId, setSelectedProductId] = useState('');
   const [quantity, setQuantity] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const totalPages = Math.ceil(sales.length / ITEMS_PER_PAGE);
-  const paginatedSales = [...sales]
-    .reverse()
-    .slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
+  const paginatedSales = sales.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
 
-  const handleAddSale = (e: React.FormEvent) => {
+  const handleAddSale = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedProductId || !quantity) {
       toast.error('Pilih produk dan masukkan jumlah');
       return;
     }
-    addSale(selectedProductId, parseInt(quantity));
-    setSelectedProductId('');
-    setQuantity('');
-    toast.success('Penjualan berhasil ditambahkan');
+
+    setIsSubmitting(true);
+    try {
+      await addSale(selectedProductId, parseInt(quantity));
+      setSelectedProductId('');
+      setQuantity('');
+      toast.success('Penjualan berhasil ditambahkan');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleDeleteSale = async (id: string) => {
+    await deleteSale(id);
   };
 
   const formatCurrency = (value: number) => {
@@ -68,6 +81,20 @@ export default function SalesPage() {
     }),
     { totalSales: 0, totalHpp: 0, totalAdminFee: 0, netProfit: 0 }
   );
+
+  if (loading) {
+    return (
+      <div className="animate-fade-in">
+        <div className="page-header">
+          <h1 className="page-title">Rekap Penjualan</h1>
+          <p className="page-subtitle">Catat dan lihat ringkasan penjualan Shopee</p>
+        </div>
+        <div className="table-container">
+          <LoadingSpinner message="Memuat data penjualan..." />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="animate-fade-in">
@@ -135,7 +162,7 @@ export default function SalesPage() {
         <form onSubmit={handleAddSale} className="flex flex-col sm:flex-row gap-4">
           <div className="flex-1 space-y-2">
             <Label htmlFor="product">Pilih Produk</Label>
-            <Select value={selectedProductId} onValueChange={setSelectedProductId}>
+            <Select value={selectedProductId} onValueChange={setSelectedProductId} disabled={isSubmitting}>
               <SelectTrigger>
                 <SelectValue placeholder="Pilih produk..." />
               </SelectTrigger>
@@ -163,11 +190,16 @@ export default function SalesPage() {
               value={quantity}
               onChange={(e) => setQuantity(e.target.value)}
               placeholder="0"
+              disabled={isSubmitting}
             />
           </div>
           <div className="flex items-end">
-            <Button type="submit" disabled={products.length === 0} className="gap-2 w-full sm:w-auto">
-              <Plus size={18} />
+            <Button type="submit" disabled={products.length === 0 || isSubmitting} className="gap-2 w-full sm:w-auto">
+              {isSubmitting ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Plus size={18} />
+              )}
               Tambah
             </Button>
           </div>
@@ -260,7 +292,7 @@ export default function SalesPage() {
                               <AlertDialogFooter>
                                 <AlertDialogCancel>Batal</AlertDialogCancel>
                                 <AlertDialogAction
-                                  onClick={() => deleteSale(sale.id)}
+                                  onClick={() => handleDeleteSale(sale.id)}
                                   className="bg-destructive hover:bg-destructive/90"
                                 >
                                   Hapus

@@ -29,7 +29,7 @@ import {
   CommandItem,
   CommandList,
 } from '@/components/ui/command';
-import { Plus, Trash2, BarChart3, TrendingUp, DollarSign, ShoppingCart, Package, Loader2, Calendar as CalendarIcon, Check, ChevronsUpDown } from 'lucide-react';
+import { Plus, Trash2, BarChart3, TrendingUp, DollarSign, ShoppingCart, Package, Loader2, Calendar as CalendarIcon, Check, ChevronsUpDown, Pencil, Search } from 'lucide-react';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
@@ -69,7 +69,7 @@ const generateMonthOptions = () => {
 };
 
 export default function SalesPage() {
-  const { products, sales, addSale, deleteSale, settings, loading } = useApp();
+  const { products, sales, addSale, updateSale, deleteSale, settings, loading } = useApp();
   const [selectedProductId, setSelectedProductId] = useState('');
   const [quantity, setQuantity] = useState('1');
   const [currentPage, setCurrentPage] = useState(1);
@@ -79,6 +79,19 @@ export default function SalesPage() {
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [isProductOpen, setIsProductOpen] = useState(false);
   
+  // Search filter state
+  const [searchQuery, setSearchQuery] = useState('');
+  
+  // Edit dialog state
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [editingSaleId, setEditingSaleId] = useState<string | null>(null);
+  const [editProductId, setEditProductId] = useState('');
+  const [editQuantity, setEditQuantity] = useState('1');
+  const [editDate, setEditDate] = useState<Date>(new Date());
+  const [isEditCalendarOpen, setIsEditCalendarOpen] = useState(false);
+  const [isEditProductOpen, setIsEditProductOpen] = useState(false);
+  const [isEditSubmitting, setIsEditSubmitting] = useState(false);
+  
   // Month filter state - default to current month
   const [selectedMonth, setSelectedMonth] = useState(() => {
     const now = new Date();
@@ -87,16 +100,30 @@ export default function SalesPage() {
 
   const monthOptions = useMemo(() => generateMonthOptions(), []);
 
-  // Filter sales by selected month
+  // Filter sales by selected month and search query
   const filteredSales = useMemo(() => {
-    if (!selectedMonth) return sales;
+    let result = sales;
     
-    const [year, month] = selectedMonth.split('-').map(Number);
-    return sales.filter((sale) => {
-      const saleDate = new Date(sale.createdAt);
-      return saleDate.getFullYear() === year && saleDate.getMonth() + 1 === month;
-    });
-  }, [sales, selectedMonth]);
+    // Filter by month
+    if (selectedMonth) {
+      const [year, month] = selectedMonth.split('-').map(Number);
+      result = result.filter((sale) => {
+        const saleDate = new Date(sale.createdAt);
+        return saleDate.getFullYear() === year && saleDate.getMonth() + 1 === month;
+      });
+    }
+    
+    // Filter by search query (code or product name)
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      result = result.filter((sale) =>
+        sale.productCode.toLowerCase().includes(query) ||
+        sale.productName.toLowerCase().includes(query)
+      );
+    }
+    
+    return result;
+  }, [sales, selectedMonth, searchQuery]);
 
   // Format date to Indonesian format
   const formatDateIndonesian = (date: Date) => {
@@ -190,6 +217,39 @@ export default function SalesPage() {
     setCurrentPage(1);
   };
 
+  // Handle search change
+  const handleSearchChange = (value: string) => {
+    setSearchQuery(value);
+    setCurrentPage(1);
+  };
+
+  // Open edit dialog with sale data
+  const handleOpenEditDialog = (sale: typeof sales[0]) => {
+    setEditingSaleId(sale.id);
+    setEditProductId(sale.productId || '');
+    setEditQuantity(String(sale.quantity));
+    setEditDate(new Date(sale.createdAt));
+    setIsEditDialogOpen(true);
+  };
+
+  // Handle edit sale submission
+  const handleEditSale = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingSaleId || !editProductId || !editQuantity) {
+      toast.error('Lengkapi semua data');
+      return;
+    }
+
+    setIsEditSubmitting(true);
+    try {
+      await updateSale(editingSaleId, editProductId, parseInt(editQuantity), editDate);
+      setIsEditDialogOpen(false);
+      setEditingSaleId(null);
+    } finally {
+      setIsEditSubmitting(false);
+    }
+  };
+
   const handleAddSale = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedProductId || !quantity) {
@@ -253,25 +313,50 @@ export default function SalesPage() {
   return (
     <div className="animate-fade-in">
       <div className="page-header">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <h1 className="page-title">Rekap Penjualan</h1>
-            <p className="page-subtitle">Catat dan lihat ringkasan penjualan Shopee</p>
+        <div className="flex flex-col gap-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <h1 className="page-title">Rekap Penjualan</h1>
+              <p className="page-subtitle">Catat dan lihat ringkasan penjualan Shopee</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <CalendarIcon className="w-4 h-4 text-muted-foreground" />
+              <Select value={selectedMonth} onValueChange={handleMonthChange}>
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="Pilih bulan..." />
+                </SelectTrigger>
+                <SelectContent className="bg-popover">
+                  {monthOptions.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
+          
+          {/* Search Filter */}
           <div className="flex items-center gap-2">
-            <CalendarIcon className="w-4 h-4 text-muted-foreground" />
-            <Select value={selectedMonth} onValueChange={handleMonthChange}>
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Pilih bulan..." />
-              </SelectTrigger>
-              <SelectContent className="bg-popover">
-                {monthOptions.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <div className="relative flex-1 max-w-sm">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input
+                placeholder="Cari kode atau nama produk..."
+                value={searchQuery}
+                onChange={(e) => handleSearchChange(e.target.value)}
+                className="pl-9"
+              />
+            </div>
+            {searchQuery && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => handleSearchChange('')}
+                className="text-muted-foreground"
+              >
+                Reset
+              </Button>
+            )}
           </div>
         </div>
       </div>
@@ -568,7 +653,18 @@ export default function SalesPage() {
                             </span>
                           </td>
                           <td className="px-4 py-3">
-                            <div className="flex justify-center">
+                            <div className="flex justify-center gap-1">
+                              {/* Edit Button */}
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleOpenEditDialog(sale)}
+                                className="h-8 w-8 p-0 text-primary hover:text-primary hover:bg-primary/10"
+                              >
+                                <Pencil size={16} />
+                              </Button>
+                              
+                              {/* Delete Button */}
                               <AlertDialog>
                                 <AlertDialogTrigger asChild>
                                   <Button
@@ -641,6 +737,147 @@ export default function SalesPage() {
           </>
         )}
       </div>
+
+      {/* Edit Sale Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Edit Penjualan</DialogTitle>
+          </DialogHeader>
+          
+          <form onSubmit={handleEditSale} className="space-y-4">
+            {/* Date Picker */}
+            <div className="space-y-2">
+              <Label>Tanggal</Label>
+              <Popover open={isEditCalendarOpen} onOpenChange={setIsEditCalendarOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    disabled={isEditSubmitting}
+                    className={cn(
+                      "w-full justify-start text-left font-normal",
+                      !editDate && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {format(editDate, "dd MMMM yyyy", { locale: id })}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0 bg-popover z-[100]" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={editDate}
+                    onSelect={(date) => {
+                      if (date) {
+                        setEditDate(date);
+                        setIsEditCalendarOpen(false);
+                      }
+                    }}
+                    disabled={(date) => date > new Date()}
+                    initialFocus
+                    className="pointer-events-auto"
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+
+            {/* Product Select with Search */}
+            <div className="space-y-2">
+              <Label>Produk</Label>
+              <Popover open={isEditProductOpen} onOpenChange={setIsEditProductOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    disabled={isEditSubmitting}
+                    className={cn(
+                      "w-full justify-between font-normal",
+                      !editProductId && "text-muted-foreground"
+                    )}
+                  >
+                    {editProductId
+                      ? (() => {
+                          const product = products.find((p) => p.id === editProductId);
+                          return product ? `[${product.code}] ${product.name}` : "Pilih produk...";
+                        })()
+                      : "Pilih produk..."}
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-full p-0 bg-popover z-[100]" align="start">
+                  <Command>
+                    <CommandInput placeholder="Cari produk..." />
+                    <CommandList>
+                      <CommandEmpty>Produk tidak ditemukan.</CommandEmpty>
+                      <CommandGroup>
+                        {products.map((product) => (
+                          <CommandItem
+                            key={product.id}
+                            value={`${product.code} ${product.name}`}
+                            onSelect={() => {
+                              setEditProductId(product.id);
+                              setIsEditProductOpen(false);
+                            }}
+                          >
+                            <Check
+                              className={cn(
+                                "mr-2 h-4 w-4",
+                                editProductId === product.id ? "opacity-100" : "opacity-0"
+                              )}
+                            />
+                            <div className="flex flex-col">
+                              <span className="font-medium">[{product.code}] {product.name}</span>
+                              <span className="text-xs text-muted-foreground">{formatCurrency(product.price)}</span>
+                            </div>
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+            </div>
+
+            {/* Quantity */}
+            <div className="space-y-2">
+              <Label>Jumlah (Qty)</Label>
+              <Input
+                type="number"
+                min="1"
+                value={editQuantity}
+                onChange={(e) => setEditQuantity(e.target.value)}
+                placeholder="1"
+                disabled={isEditSubmitting}
+              />
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex gap-2 pt-2">
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={() => setIsEditDialogOpen(false)} 
+                className="flex-1"
+                disabled={isEditSubmitting}
+              >
+                Batal
+              </Button>
+              <Button 
+                type="submit" 
+                disabled={!editProductId || isEditSubmitting} 
+                className="flex-1 gap-2"
+              >
+                {isEditSubmitting ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Pencil size={18} />
+                )}
+                Simpan
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

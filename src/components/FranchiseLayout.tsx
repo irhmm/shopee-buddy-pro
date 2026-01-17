@@ -20,10 +20,10 @@ interface FranchiseLayoutProps {
 }
 
 const navItems = [
+  { path: '/laporan', label: 'Laporan Keuangan', icon: TrendingUp },
   { path: '/', label: 'Rekap Penjualan', icon: BarChart3 },
   { path: '/products', label: 'Add Produk', icon: Package },
   { path: '/settings', label: 'Setting Biaya Admin', icon: Settings },
-  { path: '/laporan', label: 'Laporan Keuangan', icon: TrendingUp },
 ];
 
 export function FranchiseLayout({ children }: FranchiseLayoutProps) {

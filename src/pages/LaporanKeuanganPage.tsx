@@ -1,8 +1,12 @@
 import { useMemo, useState } from 'react';
 import { useApp } from '@/context/AppContext';
+import { useAuth } from '@/context/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
+import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { TrendingUp, TrendingDown, DollarSign, ShoppingCart, Wallet, Info } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { TrendingUp, TrendingDown, DollarSign, ShoppingCart, Wallet, Info, CheckCircle2, Clock, Receipt } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { format } from 'date-fns';
@@ -67,8 +71,28 @@ const CustomLegend = () => (
 
 export default function LaporanKeuanganPage() {
   const { sales } = useApp();
+  const { franchiseId } = useAuth();
   const currentYear = new Date().getFullYear();
   const [selectedYear, setSelectedYear] = useState(currentYear);
+
+  // Fetch profit sharing payments
+  const { data: profitSharingPayments = [], isLoading: isLoadingPayments } = useQuery({
+    queryKey: ['profit-sharing-payments', franchiseId],
+    queryFn: async () => {
+      if (!franchiseId) return [];
+      
+      const { data, error } = await supabase
+        .from('profit_sharing_payments')
+        .select('*')
+        .eq('franchise_id', franchiseId)
+        .order('period_year', { ascending: false })
+        .order('period_month', { ascending: false });
+      
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!franchiseId,
+  });
 
   // Get available years from sales data
   const availableYears = useMemo(() => {
@@ -193,6 +217,80 @@ export default function LaporanKeuanganPage() {
           </Select>
         </div>
       </div>
+
+      {/* Card Riwayat Bagi Hasil */}
+      <Card className="shadow-md border-border/50 overflow-hidden">
+        <CardHeader className="py-3 px-4 border-b border-border/50 bg-gradient-to-r from-primary/5 to-purple-500/5">
+          <div className="flex items-center gap-2">
+            <div className="p-2 rounded-lg bg-primary/10">
+              <Receipt className="w-4 h-4 text-primary" />
+            </div>
+            <div>
+              <CardTitle className="text-base font-bold">Riwayat Bagi Hasil</CardTitle>
+              <p className="text-xs text-muted-foreground">
+                Status pembayaran bagi hasil ke Super Admin
+              </p>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="p-0">
+          {isLoadingPayments ? (
+            <div className="p-8 text-center text-muted-foreground">
+              Memuat data...
+            </div>
+          ) : profitSharingPayments.length === 0 ? (
+            <div className="p-8 text-center text-muted-foreground">
+              <Receipt className="w-12 h-12 mx-auto mb-3 opacity-30" />
+              <p className="text-sm">Belum ada data bagi hasil</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-muted/20 hover:bg-muted/20">
+                    <TableHead className="text-xs font-semibold">Periode</TableHead>
+                    <TableHead className="text-xs font-semibold text-right">Total Penjualan</TableHead>
+                    <TableHead className="text-xs font-semibold text-center">%</TableHead>
+                    <TableHead className="text-xs font-semibold text-right">Bagi Hasil</TableHead>
+                    <TableHead className="text-xs font-semibold text-center">Status</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {profitSharingPayments.map((payment) => (
+                    <TableRow key={payment.id} className="hover:bg-muted/10">
+                      <TableCell className="text-sm font-medium">
+                        {MONTHS_FULL[payment.period_month - 1]} {payment.period_year}
+                      </TableCell>
+                      <TableCell className="text-sm text-right">
+                        {formatCurrency(payment.total_revenue || 0)}
+                      </TableCell>
+                      <TableCell className="text-sm text-center text-muted-foreground">
+                        {payment.profit_sharing_percent}%
+                      </TableCell>
+                      <TableCell className="text-sm text-right font-semibold text-primary">
+                        {formatCurrency(payment.profit_sharing_amount || 0)}
+                      </TableCell>
+                      <TableCell className="text-center">
+                        {payment.payment_status === 'paid' ? (
+                          <Badge variant="outline" className="bg-emerald-500/10 text-emerald-600 border-emerald-500/30">
+                            <CheckCircle2 className="w-3 h-3 mr-1" />
+                            Lunas
+                          </Badge>
+                        ) : (
+                          <Badge variant="outline" className="bg-amber-500/10 text-amber-600 border-amber-500/30">
+                            <Clock className="w-3 h-3 mr-1" />
+                            Belum Dibayar
+                          </Badge>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Summary Cards with Glass Effect */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

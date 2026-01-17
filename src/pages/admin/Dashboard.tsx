@@ -9,7 +9,7 @@ import {
   ShoppingCart, 
   Store
 } from 'lucide-react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 
 interface FranchiseInfo {
   id: string;
@@ -71,6 +71,7 @@ export default function AdminDashboard() {
   const [franchiseStats, setFranchiseStats] = useState<FranchiseYearlyStats[]>([]);
   const [monthlyChartData, setMonthlyChartData] = useState<MonthlyProfitSharing[]>([]);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+  const [topNFranchise, setTopNFranchise] = useState<number>(5);
 
   const availableYears = useMemo(() => {
     const currentYear = new Date().getFullYear();
@@ -210,6 +211,12 @@ export default function AdminDashboard() {
     );
   }, [monthlyChartData, franchiseList]);
 
+  // Filter top N franchises by total profit sharing for the chart
+  const topFranchises = useMemo(() => {
+    const sorted = [...franchiseStats].sort((a, b) => b.profitSharing - a.profitSharing);
+    return topNFranchise >= 999 ? sorted : sorted.slice(0, topNFranchise);
+  }, [franchiseStats, topNFranchise]);
+
   if (loading) {
     return (
       <div className="animate-fade-in">
@@ -313,13 +320,25 @@ export default function AdminDashboard() {
       {/* Chart - Monthly Profit Sharing per Franchise */}
       <Card className="shadow-md border-border/50">
         <CardHeader className="py-4 px-5 border-b border-border/50">
-          <CardTitle className="text-base font-bold">Bagi Hasil per Franchise - Tahun {selectedYear}</CardTitle>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+            <CardTitle className="text-base font-bold">Bagi Hasil per Franchise - Tahun {selectedYear}</CardTitle>
+            <Select value={topNFranchise.toString()} onValueChange={(v) => setTopNFranchise(parseInt(v))}>
+              <SelectTrigger className="w-[100px]">
+                <SelectValue placeholder="Top N" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="5">Top 5</SelectItem>
+                <SelectItem value="10">Top 10</SelectItem>
+                <SelectItem value="999">Semua</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </CardHeader>
         <CardContent className="pt-4">
           {hasChartData ? (
-            <div className="h-[350px]">
+            <div className="h-[300px]">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={monthlyChartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                <LineChart data={monthlyChartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
                   <CartesianGrid strokeDasharray="3 3" className="stroke-border/50" vertical={false} />
                   <XAxis 
                     dataKey="month" 
@@ -341,18 +360,21 @@ export default function AdminDashboard() {
                     labelStyle={{ fontWeight: 'bold', marginBottom: '4px' }}
                   />
                   <Legend 
-                    wrapperStyle={{ paddingTop: '10px' }}
+                    wrapperStyle={{ paddingTop: '10px', overflowX: 'auto', maxWidth: '100%' }}
                     iconType="circle"
                   />
-                  {franchiseList.map((franchise, index) => (
-                    <Bar 
+                  {topFranchises.map((franchise, index) => (
+                    <Line 
                       key={franchise.id}
+                      type="monotone"
                       dataKey={franchise.name}
-                      fill={COLORS[index % COLORS.length]}
-                      radius={[4, 4, 0, 0]}
+                      stroke={COLORS[index % COLORS.length]}
+                      strokeWidth={2}
+                      dot={{ r: 3 }}
+                      activeDot={{ r: 5 }}
                     />
                   ))}
-                </BarChart>
+                </LineChart>
               </ResponsiveContainer>
             </div>
           ) : (

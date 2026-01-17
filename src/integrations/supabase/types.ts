@@ -46,6 +46,44 @@ export type Database = {
           },
         ]
       }
+      expenditures: {
+        Row: {
+          amount: number
+          created_at: string
+          description: string
+          expenditure_date: string
+          franchise_id: string
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          description: string
+          expenditure_date: string
+          franchise_id: string
+          id?: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          description?: string
+          expenditure_date?: string
+          franchise_id?: string
+          id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expenditures_franchise_id_fkey"
+            columns: ["franchise_id"]
+            isOneToOne: false
+            referencedRelation: "franchises"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       franchises: {
         Row: {
           created_at: string | null

@@ -28,6 +28,10 @@ import ProductPerformance from "./pages/admin/ProductPerformance";
 import ProfitSharingSettings from "./pages/admin/ProfitSharingSettings";
 import ProfitSharingPayments from "./pages/admin/ProfitSharingPayments";
 import GlobalReports from "./pages/admin/GlobalReports";
+import ExpendituresGlobal from "./pages/admin/ExpendituresGlobal";
+
+// Franchise Pages
+import ExpendituresPage from "./pages/ExpendituresPage";
 
 const queryClient = new QueryClient();
 
@@ -79,6 +83,11 @@ function AppRoutes() {
           <AdminLayout><ProductPerformance /></AdminLayout>
         </AdminRoute>
       } />
+      <Route path="/admin/expenditures" element={
+        <AdminRoute>
+          <AdminLayout><ExpendituresGlobal /></AdminLayout>
+        </AdminRoute>
+      } />
 
       {/* Franchise Routes */}
       <Route path="/" element={
@@ -112,6 +121,13 @@ function AppRoutes() {
         <FranchiseRoute>
           <AppProvider>
             <FranchiseLayout><LaporanKeuanganPage /></FranchiseLayout>
+          </AppProvider>
+        </FranchiseRoute>
+      } />
+      <Route path="/pengeluaran" element={
+        <FranchiseRoute>
+          <AppProvider>
+            <FranchiseLayout><ExpendituresPage /></FranchiseLayout>
           </AppProvider>
         </FranchiseRoute>
       } />

@@ -23,6 +23,7 @@ import NotFound from "./pages/NotFound";
 // Admin Pages
 import AdminDashboard from "./pages/admin/Dashboard";
 import FranchiseManagement from "./pages/admin/FranchiseManagement";
+import ProductsGlobal from "./pages/admin/ProductsGlobal";
 import ProfitSharingSettings from "./pages/admin/ProfitSharingSettings";
 import ProfitSharingPayments from "./pages/admin/ProfitSharingPayments";
 import GlobalReports from "./pages/admin/GlobalReports";
@@ -50,6 +51,11 @@ function AppRoutes() {
       <Route path="/admin/franchises" element={
         <AdminRoute>
           <AdminLayout><FranchiseManagement /></AdminLayout>
+        </AdminRoute>
+      } />
+      <Route path="/admin/products" element={
+        <AdminRoute>
+          <AdminLayout><ProductsGlobal /></AdminLayout>
         </AdminRoute>
       } />
       <Route path="/admin/profit-sharing" element={

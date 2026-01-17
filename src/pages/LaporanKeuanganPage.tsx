@@ -300,27 +300,6 @@ export default function LaporanKeuanganPage() {
 
           {/* Custom Legend */}
           <CustomLegend />
-
-          {/* Yearly Summary with Themed Cards */}
-          <div className="mt-5 pt-4 border-t border-border/50">
-            <h3 className="text-xs font-semibold text-muted-foreground mb-3 text-center">
-              Total Keseluruhan Tahun {selectedYear}
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-              <div className="p-3 rounded-lg bg-gradient-to-br from-emerald-500/10 to-emerald-600/5 border border-emerald-500/20 text-center">
-                <p className="text-xs text-emerald-600 dark:text-emerald-400 font-medium mb-0.5">Total Penjualan</p>
-                <p className="text-lg md:text-xl font-bold text-emerald-600 dark:text-emerald-400">{formatCurrency(yearlyTotals.penjualan)}</p>
-              </div>
-              <div className="p-3 rounded-lg bg-gradient-to-br from-blue-500/10 to-blue-600/5 border border-blue-500/20 text-center">
-                <p className="text-xs text-blue-600 dark:text-blue-400 font-medium mb-0.5">Total Laba Bersih</p>
-                <p className="text-lg md:text-xl font-bold text-blue-600 dark:text-blue-400">{formatCurrency(yearlyTotals.labaBersih)}</p>
-              </div>
-              <div className="p-3 rounded-lg bg-gradient-to-br from-amber-500/10 to-amber-600/5 border border-amber-500/20 text-center">
-                <p className="text-xs text-amber-600 dark:text-amber-400 font-medium mb-0.5">Total Pengeluaran</p>
-                <p className="text-lg md:text-xl font-bold text-amber-600 dark:text-amber-400">{formatCurrency(yearlyTotals.pengeluaran)}</p>
-              </div>
-            </div>
-          </div>
         </CardContent>
       </Card>
 

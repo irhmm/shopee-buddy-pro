@@ -73,18 +73,21 @@ export function AdminLayout({ children }: AdminLayoutProps) {
         )}
       >
         {/* Logo */}
-        <div className="h-16 flex items-center justify-between px-4 border-b border-sidebar-border">
-          <div className={cn("flex items-center gap-3", !sidebarOpen && "lg:justify-center")}>
-            <div className="w-10 h-10 bg-gradient-to-br from-violet-600 to-indigo-600 rounded-xl flex items-center justify-center shadow-card flex-shrink-0">
-              <Shield className="w-6 h-6 text-white" />
-            </div>
-            {sidebarOpen && (
+        <div className="h-16 flex items-center justify-center px-4 border-b border-sidebar-border">
+          {/* Logo - only visible when sidebar is open */}
+          {sidebarOpen && (
+            <div className="flex items-center gap-3 flex-1">
+              <div className="w-10 h-10 bg-gradient-to-br from-violet-600 to-indigo-600 rounded-xl flex items-center justify-center shadow-card flex-shrink-0">
+                <Shield className="w-6 h-6 text-white" />
+              </div>
               <div className="overflow-hidden">
                 <h1 className="font-bold text-sidebar-foreground text-lg">Super Admin</h1>
                 <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
               </div>
-            )}
-          </div>
+            </div>
+          )}
+          
+          {/* Toggle Button - always visible, centered when collapsed */}
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
             className="hidden lg:flex p-1.5 rounded-lg hover:bg-sidebar-accent transition-colors"

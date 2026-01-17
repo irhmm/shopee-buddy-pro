@@ -56,46 +56,32 @@ export default function ProfitSharingSettings() {
     }
   };
 
-  // Recalculate current month's profit sharing when percentage changes
-  const recalculateCurrentMonth = async (franchiseId: string, newPercent: number) => {
-    const currentDate = new Date();
-    const currentMonth = currentDate.getMonth() + 1;
-    const currentYear = currentDate.getFullYear();
+  // Recalculate ALL profit sharing payments when percentage changes
+  const recalculateAllPeriods = async (franchiseId: string, newPercent: number) => {
+    // Fetch all profit sharing payments for this franchise
+    const { data: payments, error: fetchError } = await supabase
+      .from('profit_sharing_payments')
+      .select('id, total_revenue')
+      .eq('franchise_id', franchiseId);
 
-    // Get date range for current month
-    const startDate = new Date(currentYear, currentMonth - 1, 1);
-    const endDate = new Date(currentYear, currentMonth, 0, 23, 59, 59);
+    if (fetchError) {
+      console.error('Error fetching payments:', fetchError);
+      return;
+    }
 
-    // Fetch sales for this franchise in current month
-    const { data: sales } = await supabase
-      .from('sales')
-      .select('total_sales')
-      .eq('franchise_id', franchiseId)
-      .gte('created_at', startDate.toISOString())
-      .lte('created_at', endDate.toISOString());
+    // Update each record with new percentage
+    for (const payment of payments || []) {
+      const newAmount = (payment.total_revenue || 0) * (newPercent / 100);
 
-    const totalSales = (sales || []).reduce(
-      (sum, s) => sum + (Number(s.total_sales) || 0),
-      0
-    );
-
-    const profitSharingAmount = totalSales * (newPercent / 100);
-
-    // Upsert profit sharing payment for current month
-    await supabase.from('profit_sharing_payments').upsert(
-      {
-        franchise_id: franchiseId,
-        period_month: currentMonth,
-        period_year: currentYear,
-        total_revenue: totalSales,
-        profit_sharing_percent: newPercent,
-        profit_sharing_amount: profitSharingAmount,
-        updated_at: new Date().toISOString(),
-      },
-      {
-        onConflict: 'franchise_id,period_month,period_year',
-      }
-    );
+      await supabase
+        .from('profit_sharing_payments')
+        .update({
+          profit_sharing_percent: newPercent,
+          profit_sharing_amount: newAmount,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', payment.id);
+    }
   };
 
   const handleSave = async (franchiseId: string) => {
@@ -114,8 +100,8 @@ export default function ProfitSharingSettings() {
 
       if (error) throw error;
 
-      // Recalculate current month's profit sharing
-      await recalculateCurrentMonth(franchiseId, newValue);
+      // Recalculate ALL profit sharing payments with new percentage
+      await recalculateAllPeriods(franchiseId, newValue);
 
       setFranchises((prev) =>
         prev.map((f) =>
@@ -146,8 +132,8 @@ export default function ProfitSharingSettings() {
 
         if (error) throw error;
 
-        // Recalculate current month's profit sharing
-        await recalculateCurrentMonth(franchise.id, newPercent);
+        // Recalculate ALL profit sharing payments with new percentage
+        await recalculateAllPeriods(franchise.id, newPercent);
       }
 
       await fetchFranchises();

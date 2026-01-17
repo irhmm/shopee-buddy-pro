@@ -324,6 +324,8 @@ export default function ProductsPage() {
                 <Pagination
                   currentPage={currentPage}
                   totalPages={totalPages}
+                  totalItems={products.length}
+                  itemsPerPage={ITEMS_PER_PAGE}
                   onPageChange={setCurrentPage}
                 />
               </div>

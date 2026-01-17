@@ -634,6 +634,8 @@ export default function SalesPage() {
                 <Pagination
                   currentPage={currentPage}
                   totalPages={totalPages}
+                  totalItems={filteredSales.length}
+                  itemsPerPage={ITEMS_PER_PAGE}
                   onPageChange={setCurrentPage}
                 />
               </div>

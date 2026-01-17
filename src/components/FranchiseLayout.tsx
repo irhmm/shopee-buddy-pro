@@ -120,7 +120,7 @@ export function FranchiseLayout({ children }: FranchiseLayoutProps) {
             <div className="p-4 bg-primary/5">
               <p className="text-xs text-muted-foreground mb-1">Bagi Hasil</p>
               <p className="text-sm font-semibold text-primary">
-                {franchiseInfo.profitSharingPercent}% dari laba bersih
+                {franchiseInfo.profitSharingPercent}% dari total penjualan
               </p>
             </div>
           )}

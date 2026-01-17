@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { useRealtimeSubscription } from '@/hooks/use-realtime';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -20,11 +21,7 @@ export default function ProfitSharingSettings() {
   const [savingId, setSavingId] = useState<string | null>(null);
   const [editedValues, setEditedValues] = useState<Record<string, string>>({});
 
-  useEffect(() => {
-    fetchFranchises();
-  }, []);
-
-  const fetchFranchises = async () => {
+  const fetchFranchises = useCallback(async () => {
     setLoading(true);
     try {
       const { data, error } = await supabase
@@ -54,7 +51,16 @@ export default function ProfitSharingSettings() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchFranchises();
+  }, [fetchFranchises]);
+
+  // Realtime subscription for automatic updates
+  useRealtimeSubscription([
+    { table: 'franchises', onDataChange: fetchFranchises },
+  ]);
 
   // Recalculate ALL profit sharing payments when percentage changes
   const recalculateAllPeriods = async (franchiseId: string, newPercent: number) => {

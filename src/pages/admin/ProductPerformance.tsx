@@ -1,5 +1,6 @@
-import { useState, useEffect, useMemo, Fragment } from 'react';
+import { useState, useEffect, useMemo, Fragment, useCallback } from 'react';
 import { format, startOfMonth, endOfMonth, subMonths } from 'date-fns';
+import { useRealtimeSubscription } from '@/hooks/use-realtime';
 import { id as localeId } from 'date-fns/locale';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -99,12 +100,7 @@ export default function ProductPerformance() {
     return Array.from({ length: 5 }, (_, i) => currentYear - i);
   }, []);
 
-  // Fetch data
-  useEffect(() => {
-    fetchData();
-  }, [selectedMonth, selectedYear, selectedFranchise]);
-
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setLoading(true);
     try {
       // Fetch franchises
@@ -299,7 +295,19 @@ export default function ProductPerformance() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [selectedMonth, selectedYear, selectedFranchise]);
+
+  // Fetch data
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  // Realtime subscriptions for automatic updates
+  useRealtimeSubscription([
+    { table: 'sales', onDataChange: fetchData },
+    { table: 'products', onDataChange: fetchData },
+    { table: 'franchises', onDataChange: fetchData },
+  ]);
 
   // Filter by search
   const filteredRankings = useMemo(() => {

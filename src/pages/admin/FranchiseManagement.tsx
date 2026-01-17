@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { useRealtimeSubscription } from '@/hooks/use-realtime';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -75,11 +76,7 @@ export default function FranchiseManagement() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
 
-  useEffect(() => {
-    fetchFranchises();
-  }, []);
-
-  const fetchFranchises = async () => {
+  const fetchFranchises = useCallback(async () => {
     setLoading(true);
     try {
       const { data, error } = await supabase
@@ -113,7 +110,16 @@ export default function FranchiseManagement() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchFranchises();
+  }, [fetchFranchises]);
+
+  // Realtime subscription for automatic updates
+  useRealtimeSubscription([
+    { table: 'franchises', onDataChange: fetchFranchises },
+  ]);
 
   const totalPages = Math.ceil(franchises.length / ITEMS_PER_PAGE);
   const paginatedFranchises = franchises.slice(

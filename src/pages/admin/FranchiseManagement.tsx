@@ -35,7 +35,8 @@ import {
   Lock,
   Percent,
   Check,
-  X
+  X,
+  Key
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Switch } from '@/components/ui/switch';
@@ -66,6 +67,13 @@ export default function FranchiseManagement() {
     password: '',
     profitSharingPercent: '10',
   });
+
+  // Password change states
+  const [isPasswordDialogOpen, setIsPasswordDialogOpen] = useState(false);
+  const [selectedFranchise, setSelectedFranchise] = useState<Franchise | null>(null);
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
 
   useEffect(() => {
     fetchFranchises();
@@ -249,6 +257,53 @@ export default function FranchiseManagement() {
     } catch (error) {
       console.error('Error deleting franchise:', error);
       toast.error('Gagal menghapus franchise');
+    }
+  };
+
+  const openPasswordDialog = (franchise: Franchise) => {
+    setSelectedFranchise(franchise);
+    setNewPassword('');
+    setConfirmPassword('');
+    setIsPasswordDialogOpen(true);
+  };
+
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!selectedFranchise) return;
+
+    if (newPassword !== confirmPassword) {
+      toast.error('Password tidak cocok');
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      toast.error('Password minimal 6 karakter');
+      return;
+    }
+
+    setIsUpdatingPassword(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('update-user-password', {
+        body: {
+          user_id: selectedFranchise.userId,
+          new_password: newPassword,
+        },
+      });
+
+      if (error) throw error;
+      if (!data.success) throw new Error(data.error);
+
+      toast.success('Password berhasil diubah');
+      setIsPasswordDialogOpen(false);
+      setNewPassword('');
+      setConfirmPassword('');
+      setSelectedFranchise(null);
+    } catch (error: any) {
+      console.error('Error changing password:', error);
+      toast.error(error.message || 'Gagal mengubah password');
+    } finally {
+      setIsUpdatingPassword(false);
     }
   };
 
@@ -451,8 +506,18 @@ export default function FranchiseManagement() {
                               size="sm"
                               onClick={() => handleOpenDialog(franchise)}
                               className="h-8 w-8 p-0"
+                              title="Edit Franchise"
                             >
                               <Pencil size={16} />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => openPasswordDialog(franchise)}
+                              className="h-8 w-8 p-0 text-amber-600 hover:text-amber-700 hover:bg-amber-500/10"
+                              title="Ganti Password"
+                            >
+                              <Key size={16} />
                             </Button>
                             <AlertDialog>
                               <AlertDialogTrigger asChild>
@@ -505,6 +570,76 @@ export default function FranchiseManagement() {
           )}
         </CardContent>
       </Card>
+
+      {/* Password Change Dialog */}
+      <Dialog open={isPasswordDialogOpen} onOpenChange={setIsPasswordDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Key className="w-5 h-5 text-amber-600" />
+              Ganti Password
+            </DialogTitle>
+          </DialogHeader>
+          <div className="mb-4 p-3 bg-muted/50 rounded-lg">
+            <p className="text-sm text-muted-foreground">
+              Ganti password untuk franchise:
+            </p>
+            <p className="font-medium text-foreground">{selectedFranchise?.name}</p>
+          </div>
+          <form onSubmit={handleChangePassword} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="newPassword">Password Baru</Label>
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  id="newPassword"
+                  type="password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  placeholder="Minimal 6 karakter"
+                  className="pl-10"
+                  required
+                  minLength={6}
+                  disabled={isUpdatingPassword}
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="confirmPassword">Konfirmasi Password</Label>
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  id="confirmPassword"
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder="Ketik ulang password"
+                  className="pl-10"
+                  required
+                  minLength={6}
+                  disabled={isUpdatingPassword}
+                />
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-3 pt-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setIsPasswordDialogOpen(false)}
+                disabled={isUpdatingPassword}
+              >
+                Batal
+              </Button>
+              <Button type="submit" disabled={isUpdatingPassword}>
+                {isUpdatingPassword && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                Simpan Password
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -30,6 +30,8 @@ interface MonthlyData {
   labaBersih: number;
   penjualan: number;
   pengeluaran: number;
+  hpp: number;
+  biayaAdmin: number;
 }
 
 const formatCurrency = (value: number) => {
@@ -206,7 +208,7 @@ export default function LaporanKeuanganPage() {
     
     // Initialize all months
     MONTHS.forEach(month => {
-      data[month] = { month, labaBersih: 0, penjualan: 0, pengeluaran: 0 };
+      data[month] = { month, labaBersih: 0, penjualan: 0, pengeluaran: 0, hpp: 0, biayaAdmin: 0 };
     });
 
     // Aggregate sales data
@@ -219,6 +221,8 @@ export default function LaporanKeuanganPage() {
         data[month].labaBersih += sale.netProfit;
         data[month].penjualan += sale.totalSales;
         data[month].pengeluaran += sale.totalHpp + sale.totalAdminFee;
+        data[month].hpp += sale.totalHpp;
+        data[month].biayaAdmin += sale.totalAdminFee;
       });
 
     return MONTHS.map(month => data[month]);
@@ -312,9 +316,10 @@ export default function LaporanKeuanganPage() {
   }, [profitSharingPayments]);
 
   // Calculate Real Profit (Laba Real)
+  // Rumus: Total Penjualan - Total Pengeluaran - Total HPP - Total Biaya Admin - Total Bagi Hasil
   const realProfit = useMemo(() => {
-    return currentMonthData.labaBersih - currentMonthExpenditures - currentMonthProfitSharing;
-  }, [currentMonthData.labaBersih, currentMonthExpenditures, currentMonthProfitSharing]);
+    return currentMonthData.penjualan - currentMonthExpenditures - currentMonthData.hpp - currentMonthData.biayaAdmin - currentMonthProfitSharing;
+  }, [currentMonthData, currentMonthExpenditures, currentMonthProfitSharing]);
 
   return (
     <div className="space-y-6">
@@ -415,15 +420,23 @@ export default function LaporanKeuanganPage() {
                 <p className="text-xs font-medium text-muted-foreground mb-2">Perhitungan:</p>
                 <div className="space-y-1.5 text-xs">
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">Laba Bersih</span>
-                    <span className="font-medium text-blue-600 dark:text-blue-400">{formatCurrency(currentMonthData.labaBersih)}</span>
+                    <span className="text-muted-foreground">Total Penjualan</span>
+                    <span className="font-medium text-emerald-600 dark:text-emerald-400">{formatCurrency(currentMonthData.penjualan)}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">Pengeluaran Operasional</span>
+                    <span className="text-muted-foreground">Total HPP</span>
+                    <span className="font-medium text-red-600 dark:text-red-400">- {formatCurrency(currentMonthData.hpp)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Total Biaya Admin</span>
+                    <span className="font-medium text-red-600 dark:text-red-400">- {formatCurrency(currentMonthData.biayaAdmin)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Total Pengeluaran</span>
                     <span className="font-medium text-amber-600 dark:text-amber-400">- {formatCurrency(currentMonthExpenditures)}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">Bagi Hasil</span>
+                    <span className="text-muted-foreground">Total Bagi Hasil</span>
                     <span className="font-medium text-purple-600 dark:text-purple-400">- {formatCurrency(currentMonthProfitSharing)}</span>
                   </div>
                   <div className="border-t border-border/50 pt-1.5 mt-1.5 flex justify-between">

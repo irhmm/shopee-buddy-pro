@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Pagination } from '@/components/Pagination';
 import { Badge } from '@/components/ui/badge';
-import { TrendingUp, TrendingDown, DollarSign, ShoppingCart, Wallet, Info, CheckCircle2, Clock, Receipt } from 'lucide-react';
+import { TrendingUp, TrendingDown, DollarSign, ShoppingCart, Wallet, Info, CheckCircle2, Clock, Receipt, Target } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { format } from 'date-fns';
@@ -116,6 +116,37 @@ export default function LaporanKeuanganPage() {
         table: 'profit_sharing_payments', 
         filter: franchiseId ? `franchise_id=eq.${franchiseId}` : undefined,
         onDataChange: refetchPayments 
+      },
+    ],
+    !!franchiseId
+  );
+
+  // Fetch expenditures data
+  const { data: expenditures = [] } = useQuery({
+    queryKey: ['expenditures', franchiseId],
+    queryFn: async () => {
+      if (!franchiseId) return [];
+      const { data, error } = await supabase
+        .from('expenditures')
+        .select('*')
+        .eq('franchise_id', franchiseId);
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!franchiseId,
+  });
+
+  // Realtime subscription for expenditures
+  const refetchExpenditures = useCallback(() => {
+    queryClient.invalidateQueries({ queryKey: ['expenditures', franchiseId] });
+  }, [queryClient, franchiseId]);
+
+  useRealtimeSubscription(
+    [
+      { 
+        table: 'expenditures', 
+        filter: franchiseId ? `franchise_id=eq.${franchiseId}` : undefined,
+        onDataChange: refetchExpenditures 
       },
     ],
     !!franchiseId
@@ -254,6 +285,37 @@ export default function LaporanKeuanganPage() {
     );
   }, [monthlyData]);
 
+  // Calculate current month operational expenditures
+  const currentMonthExpenditures = useMemo(() => {
+    const now = new Date();
+    const currentMonthNum = now.getMonth();
+    const currentYearNum = now.getFullYear();
+    
+    return expenditures
+      .filter(exp => {
+        const date = new Date(exp.expenditure_date);
+        return date.getMonth() === currentMonthNum && date.getFullYear() === currentYearNum;
+      })
+      .reduce((sum, exp) => sum + exp.amount, 0);
+  }, [expenditures]);
+
+  // Calculate current month profit sharing
+  const currentMonthProfitSharing = useMemo(() => {
+    const currentMonthNum = new Date().getMonth() + 1; // 1-indexed
+    const currentYearNum = new Date().getFullYear();
+    
+    const payment = profitSharingPayments.find(
+      p => p.period_month === currentMonthNum && p.period_year === currentYearNum
+    );
+    
+    return payment?.profit_sharing_amount || 0;
+  }, [profitSharingPayments]);
+
+  // Calculate Real Profit (Laba Real)
+  const realProfit = useMemo(() => {
+    return currentMonthData.labaBersih - currentMonthExpenditures - currentMonthProfitSharing;
+  }, [currentMonthData.labaBersih, currentMonthExpenditures, currentMonthProfitSharing]);
+
   return (
     <div className="space-y-6">
       {/* Header with Gradient Background */}
@@ -324,6 +386,58 @@ export default function LaporanKeuanganPage() {
           );
         })}
       </div>
+
+      {/* Laba Real Card */}
+      <Card className={`relative overflow-hidden shadow-lg border-2 ${realProfit >= 0 ? 'border-emerald-500/30 bg-gradient-to-br from-emerald-500/5 via-background to-emerald-600/10' : 'border-red-500/30 bg-gradient-to-br from-red-500/5 via-background to-red-600/10'}`}>
+        {/* Decorative background */}
+        <div className={`absolute -right-8 -top-8 w-32 h-32 rounded-full ${realProfit >= 0 ? 'bg-emerald-500/10' : 'bg-red-500/10'} blur-3xl`} />
+        <div className={`absolute -left-8 -bottom-8 w-32 h-32 rounded-full ${realProfit >= 0 ? 'bg-emerald-500/10' : 'bg-red-500/10'} blur-3xl`} />
+        
+        <CardContent className="relative p-4 md:p-5">
+          <div className="flex items-start justify-between gap-4">
+            <div className="space-y-3 flex-1">
+              <div className="flex items-center gap-2">
+                <div className={`p-2 rounded-xl ${realProfit >= 0 ? 'bg-emerald-500/15' : 'bg-red-500/15'} shadow-inner`}>
+                  <Target className={`w-5 h-5 ${realProfit >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`} />
+                </div>
+                <div>
+                  <h3 className="text-sm font-semibold text-foreground">Laba Real</h3>
+                  <p className="text-xs text-muted-foreground">Profit riil setelah semua potongan</p>
+                </div>
+              </div>
+              
+              <div className={`text-2xl md:text-3xl font-bold ${realProfit >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}>
+                {formatCurrency(realProfit)}
+              </div>
+
+              {/* Breakdown */}
+              <div className="p-3 rounded-lg bg-muted/30 border border-border/50">
+                <p className="text-xs font-medium text-muted-foreground mb-2">Perhitungan:</p>
+                <div className="space-y-1.5 text-xs">
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Laba Bersih</span>
+                    <span className="font-medium text-blue-600 dark:text-blue-400">{formatCurrency(currentMonthData.labaBersih)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Pengeluaran Operasional</span>
+                    <span className="font-medium text-amber-600 dark:text-amber-400">- {formatCurrency(currentMonthExpenditures)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Bagi Hasil</span>
+                    <span className="font-medium text-purple-600 dark:text-purple-400">- {formatCurrency(currentMonthProfitSharing)}</span>
+                  </div>
+                  <div className="border-t border-border/50 pt-1.5 mt-1.5 flex justify-between">
+                    <span className="font-semibold text-foreground">Laba Real</span>
+                    <span className={`font-bold ${realProfit >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}>
+                      {formatCurrency(realProfit)}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Bar Chart with Enhanced Styling */}
       <Card className="relative shadow-md border-border/50 overflow-hidden">

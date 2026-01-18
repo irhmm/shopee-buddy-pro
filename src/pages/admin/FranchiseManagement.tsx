@@ -170,53 +170,19 @@ export default function FranchiseManagement() {
         if (error) throw error;
         toast.success('Franchise berhasil diperbarui');
       } else {
-        // Create new user and franchise
-        const { data: authData, error: authError } = await supabase.auth.signUp({
-          email: formData.email,
-          password: formData.password,
-          options: {
-            emailRedirectTo: `${window.location.origin}/`,
+        // Create new user and franchise via Edge Function
+        // This prevents the admin session from being replaced
+        const { data, error } = await supabase.functions.invoke('create-franchise-user', {
+          body: {
+            email: formData.email,
+            password: formData.password,
+            name: formData.name,
+            profit_sharing_percent: parseFloat(formData.profitSharingPercent),
           },
         });
 
-        if (authError) throw authError;
-        if (!authData.user) throw new Error('Gagal membuat user');
-
-        // Create franchise record
-        const { data: franchiseData, error: franchiseError } = await supabase
-          .from('franchises')
-          .insert({
-            name: formData.name,
-            user_id: authData.user.id,
-            profit_sharing_percent: parseFloat(formData.profitSharingPercent),
-          })
-          .select()
-          .single();
-
-        if (franchiseError) throw franchiseError;
-
-        // Assign franchise role
-        const { error: roleError } = await supabase
-          .from('user_roles')
-          .insert({
-            user_id: authData.user.id,
-            role: 'franchise',
-          });
-
-        if (roleError) throw roleError;
-
-        // Create default admin_settings for franchise
-        const { error: settingsError } = await supabase
-          .from('admin_settings')
-          .insert({
-            franchise_id: franchiseData.id,
-            admin_fee_percent: 5,
-            fixed_deduction: 1000,
-          });
-
-        if (settingsError) {
-          console.error('Error creating settings:', settingsError);
-        }
+        if (error) throw error;
+        if (!data.success) throw new Error(data.error);
 
         toast.success('Franchise berhasil ditambahkan');
       }

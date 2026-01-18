@@ -146,11 +146,11 @@ export function CalculationGuide({
                       <div className="font-semibold text-emerald-800 dark:text-emerald-200 mb-1">6. Laba Real (Profit Riil)</div>
                       <div className="text-muted-foreground mb-1.5">
                         <code className="bg-emerald-100 dark:bg-emerald-900/50 px-1.5 py-0.5 rounded text-emerald-700 dark:text-emerald-300">
-                          Laba Bersih - Pengeluaran Operasional - Bagi Hasil
+                          Total Penjualan - HPP - Biaya Admin - Pengeluaran - Bagi Hasil
                         </code>
                       </div>
                       <div className="text-muted-foreground/80 italic">
-                        Keuntungan bersih setelah semua biaya operasional dan bagi hasil ke Super Admin
+                        Keuntungan riil franchise setelah semua potongan (HPP, admin, operasional, bagi hasil)
                       </div>
                     </div>
                   )}

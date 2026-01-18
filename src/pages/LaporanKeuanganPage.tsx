@@ -220,13 +220,21 @@ export default function LaporanKeuanganPage() {
         
         data[month].labaBersih += sale.netProfit;
         data[month].penjualan += sale.totalSales;
-        data[month].pengeluaran += sale.totalHpp + sale.totalAdminFee;
         data[month].hpp += sale.totalHpp;
         data[month].biayaAdmin += sale.totalAdminFee;
       });
 
+    // Aggregate expenditures data (pengeluaran operasional dari tabel expenditures)
+    expenditures
+      .filter(exp => new Date(exp.expenditure_date).getFullYear() === selectedYear)
+      .forEach(exp => {
+        const monthIndex = new Date(exp.expenditure_date).getMonth();
+        const month = MONTHS[monthIndex];
+        data[month].pengeluaran += exp.amount;
+      });
+
     return MONTHS.map(month => data[month]);
-  }, [sales, selectedYear]);
+  }, [sales, expenditures, selectedYear]);
 
   // Calculate totals for current month
   const currentMonth = new Date().getMonth();

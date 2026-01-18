@@ -46,6 +46,7 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
+import { CalculationGuide } from '@/components/CalculationGuide';
 
 const ITEMS_PER_PAGE = 25;
 
@@ -466,6 +467,9 @@ export default function SalesPage() {
           </div>
         </div>
       </div>
+
+      {/* Calculation Guide */}
+      <CalculationGuide compact />
 
       {/* Action Buttons: Filter, Export, Add */}
       <div className="mb-6 flex flex-wrap items-center justify-between gap-4">

@@ -31,7 +31,7 @@ export function CalculationGuide({
   };
 
   return (
-    <Collapsible open={isOpen} onOpenChange={setIsOpen} className="mb-4">
+    <Collapsible open={isOpen} onOpenChange={setIsOpen} className="my-4">
       <Card className="bg-blue-50/50 dark:bg-blue-950/20 border-blue-200/50 dark:border-blue-800/50">
         <CollapsibleTrigger asChild>
           <button className="w-full p-3 flex items-center justify-between hover:bg-blue-100/50 dark:hover:bg-blue-900/30 transition-colors rounded-lg">

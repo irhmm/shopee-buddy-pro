@@ -87,6 +87,9 @@ export default function LaporanKeuanganPage() {
   const [currentPageBagiHasil, setCurrentPageBagiHasil] = useState(1);
   const ITEMS_PER_PAGE_BAGI_HASIL = 6;
   const [showLabaRealBreakdown, setShowLabaRealBreakdown] = useState(false);
+  
+  // State untuk animasi goyang card Riwayat Bagi Hasil
+  const [isShaking, setIsShaking] = useState(false);
 
   // Fetch profit sharing payments
   const { data: profitSharingPayments = [], isLoading: isLoadingPayments } = useQuery({
@@ -330,6 +333,53 @@ export default function LaporanKeuanganPage() {
     return currentMonthData.penjualan - currentMonthExpenditures - currentMonthData.hpp - currentMonthData.biayaAdmin - currentMonthProfitSharing;
   }, [currentMonthData, currentMonthExpenditures, currentMonthProfitSharing]);
 
+  // Logic untuk menentukan apakah card Riwayat Bagi Hasil harus goyang
+  const shouldShakeCard = useMemo(() => {
+    const today = new Date();
+    const currentMonthNum = today.getMonth() + 1; // 1-indexed
+    const currentYearNum = today.getFullYear();
+    const lastDayOfMonth = new Date(currentYearNum, currentMonthNum, 0).getDate();
+    const daysUntilEndOfMonth = lastDayOfMonth - today.getDate();
+    
+    // Cek apakah ada tagihan belum lunas bulan ini
+    const hasUnpaidCurrentMonth = profitSharingPayments.some(p => 
+      p.period_year === currentYearNum && 
+      p.period_month === currentMonthNum && 
+      p.payment_status !== 'paid'
+    );
+    
+    // Cek apakah ada tagihan bulan sebelumnya yang belum lunas
+    const hasUnpaidPreviousMonths = profitSharingPayments.some(p => {
+      const isPastMonth = p.period_year < currentYearNum || 
+        (p.period_year === currentYearNum && p.period_month < currentMonthNum);
+      return isPastMonth && p.payment_status !== 'paid';
+    });
+    
+    // Goyang jika: (5 hari terakhir bulan DAN ada tagihan belum lunas bulan ini) ATAU ada tagihan bulan lalu belum lunas
+    return (daysUntilEndOfMonth <= 5 && hasUnpaidCurrentMonth) || hasUnpaidPreviousMonths;
+  }, [profitSharingPayments]);
+
+  // Effect untuk interval animasi goyang
+  useEffect(() => {
+    if (!shouldShakeCard) {
+      setIsShaking(false);
+      return;
+    }
+    
+    // Trigger shake setiap 5 detik
+    const shakeInterval = setInterval(() => {
+      setIsShaking(true);
+      // Matikan setelah animasi selesai (600ms)
+      setTimeout(() => setIsShaking(false), 600);
+    }, 5000);
+    
+    // Trigger pertama kali
+    setIsShaking(true);
+    setTimeout(() => setIsShaking(false), 600);
+    
+    return () => clearInterval(shakeInterval);
+  }, [shouldShakeCard]);
+
   return (
     <div className="space-y-6">
       {/* Header with Gradient Background */}
@@ -567,7 +617,7 @@ export default function LaporanKeuanganPage() {
       </Card>
 
       {/* Card Riwayat Bagi Hasil */}
-      <Card className="shadow-md border-border/50 overflow-hidden">
+      <Card className={`shadow-md border-border/50 overflow-hidden ${isShaking ? 'animate-shake' : ''}`}>
         <CardHeader className="py-3 px-4 border-b border-border/50 bg-gradient-to-r from-primary/5 to-purple-500/5">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="flex items-center gap-2">

@@ -13,6 +13,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
+import { CalculationGuide } from '@/components/CalculationGuide';
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
 const MONTHS_FULL = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
@@ -280,6 +281,9 @@ export default function LaporanKeuanganPage() {
           </Select>
         </div>
       </div>
+
+      {/* Calculation Guide */}
+      <CalculationGuide showProfitSharing showExpenditure />
 
       {/* Summary Cards with Glass Effect */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

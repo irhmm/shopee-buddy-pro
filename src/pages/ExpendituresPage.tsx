@@ -33,6 +33,7 @@ import { Wallet, Plus, Pencil, Trash2, Calendar } from 'lucide-react';
 import { format } from 'date-fns';
 import { id as idLocale } from 'date-fns/locale';
 import { useRealtimeSubscription } from '@/hooks/use-realtime';
+import { CalculationGuide } from '@/components/CalculationGuide';
 
 interface Expenditure {
   id: string;
@@ -246,6 +247,13 @@ export default function ExpendituresPage() {
           <h1 className="text-2xl font-bold text-foreground">Pengeluaran</h1>
           <p className="text-muted-foreground text-sm">Kelola data pengeluaran franchise Anda</p>
         </div>
+      </div>
+
+      {/* Calculation Guide */}
+      <CalculationGuide showExpenditure compact />
+
+      {/* Action Button */}
+      <div className="flex justify-end">
         <Dialog open={dialogOpen} onOpenChange={(open) => {
           setDialogOpen(open);
           if (!open) resetForm();

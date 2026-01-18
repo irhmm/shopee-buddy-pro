@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
 import { Settings, Check, Info, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { CalculationGuide } from '@/components/CalculationGuide';
 
 export default function SettingsPage() {
   const { settings, updateSettings, loading } = useApp();
@@ -164,6 +165,9 @@ export default function SettingsPage() {
           </div>
         </div>
       </div>
+
+      {/* Calculation Guide */}
+      <CalculationGuide compact />
     </div>
   );
 }

@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Pagination } from '@/components/Pagination';
 import { Badge } from '@/components/ui/badge';
-import { TrendingUp, TrendingDown, DollarSign, ShoppingCart, Wallet, Info, CheckCircle2, Clock, Receipt, Target } from 'lucide-react';
+import { TrendingUp, TrendingDown, DollarSign, ShoppingCart, Wallet, Info, CheckCircle2, Clock, Receipt, Target, ChevronDown, ChevronUp } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { format } from 'date-fns';
@@ -86,6 +86,7 @@ export default function LaporanKeuanganPage() {
   const [filterStatusBagiHasil, setFilterStatusBagiHasil] = useState<'all' | 'paid' | 'unpaid'>('all');
   const [currentPageBagiHasil, setCurrentPageBagiHasil] = useState(1);
   const ITEMS_PER_PAGE_BAGI_HASIL = 6;
+  const [showLabaRealBreakdown, setShowLabaRealBreakdown] = useState(false);
 
   // Fetch profit sharing payments
   const { data: profitSharingPayments = [], isLoading: isLoadingPayments } = useQuery({
@@ -423,37 +424,50 @@ export default function LaporanKeuanganPage() {
                 {formatCurrency(realProfit)}
               </div>
 
-              {/* Breakdown */}
-              <div className="p-3 rounded-lg bg-muted/30 border border-border/50">
-                <p className="text-xs font-medium text-muted-foreground mb-2">Perhitungan:</p>
-                <div className="space-y-1.5 text-xs">
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Total Penjualan</span>
-                    <span className="font-medium text-emerald-600 dark:text-emerald-400">{formatCurrency(currentMonthData.penjualan)}</span>
+              {/* Breakdown - Collapsible */}
+              <div className="rounded-lg bg-muted/30 border border-border/50 overflow-hidden">
+                <button
+                  onClick={() => setShowLabaRealBreakdown(!showLabaRealBreakdown)}
+                  className="w-full p-3 flex items-center justify-between text-xs font-medium text-muted-foreground hover:bg-muted/50 transition-colors"
+                >
+                  <span>Lihat Perhitungan</span>
+                  {showLabaRealBreakdown ? (
+                    <ChevronUp className="w-4 h-4" />
+                  ) : (
+                    <ChevronDown className="w-4 h-4" />
+                  )}
+                </button>
+                
+                {showLabaRealBreakdown && (
+                  <div className="px-3 pb-3 space-y-1.5 text-xs border-t border-border/50">
+                    <div className="flex justify-between pt-2">
+                      <span className="text-muted-foreground">Total Penjualan</span>
+                      <span className="font-medium text-emerald-600 dark:text-emerald-400">{formatCurrency(currentMonthData.penjualan)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Total HPP</span>
+                      <span className="font-medium text-red-600 dark:text-red-400">- {formatCurrency(currentMonthData.hpp)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Total Biaya Admin</span>
+                      <span className="font-medium text-red-600 dark:text-red-400">- {formatCurrency(currentMonthData.biayaAdmin)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Total Pengeluaran</span>
+                      <span className="font-medium text-amber-600 dark:text-amber-400">- {formatCurrency(currentMonthExpenditures)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Total Bagi Hasil</span>
+                      <span className="font-medium text-purple-600 dark:text-purple-400">- {formatCurrency(currentMonthProfitSharing)}</span>
+                    </div>
+                    <div className="border-t border-border/50 pt-1.5 mt-1.5 flex justify-between">
+                      <span className="font-semibold text-foreground">Laba Real</span>
+                      <span className={`font-bold ${realProfit >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}>
+                        {formatCurrency(realProfit)}
+                      </span>
+                    </div>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Total HPP</span>
-                    <span className="font-medium text-red-600 dark:text-red-400">- {formatCurrency(currentMonthData.hpp)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Total Biaya Admin</span>
-                    <span className="font-medium text-red-600 dark:text-red-400">- {formatCurrency(currentMonthData.biayaAdmin)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Total Pengeluaran</span>
-                    <span className="font-medium text-amber-600 dark:text-amber-400">- {formatCurrency(currentMonthExpenditures)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Total Bagi Hasil</span>
-                    <span className="font-medium text-purple-600 dark:text-purple-400">- {formatCurrency(currentMonthProfitSharing)}</span>
-                  </div>
-                  <div className="border-t border-border/50 pt-1.5 mt-1.5 flex justify-between">
-                    <span className="font-semibold text-foreground">Laba Real</span>
-                    <span className={`font-bold ${realProfit >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}>
-                      {formatCurrency(realProfit)}
-                    </span>
-                  </div>
-                </div>
+                )}
               </div>
             </div>
           </div>

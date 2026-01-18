@@ -139,6 +139,21 @@ export function CalculationGuide({
                       </div>
                     </div>
                   )}
+
+                  {/* Laba Real */}
+                  {showProfitSharing && showExpenditure && (
+                    <div className="p-2.5 rounded-md bg-emerald-50/70 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800/30">
+                      <div className="font-semibold text-emerald-800 dark:text-emerald-200 mb-1">6. Laba Real (Profit Riil)</div>
+                      <div className="text-muted-foreground mb-1.5">
+                        <code className="bg-emerald-100 dark:bg-emerald-900/50 px-1.5 py-0.5 rounded text-emerald-700 dark:text-emerald-300">
+                          Laba Bersih - Pengeluaran Operasional - Bagi Hasil
+                        </code>
+                      </div>
+                      <div className="text-muted-foreground/80 italic">
+                        Keuntungan bersih setelah semua biaya operasional dan bagi hasil ke Super Admin
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
 

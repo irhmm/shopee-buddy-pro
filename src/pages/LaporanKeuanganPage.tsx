@@ -326,8 +326,8 @@ export default function LaporanKeuanganPage() {
       </div>
 
       {/* Bar Chart with Enhanced Styling */}
-      <Card className="shadow-md border-border/50 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent to-muted/5" />
+      <Card className="relative shadow-md border-border/50 overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent to-muted/5 pointer-events-none" />
         <CardHeader className="relative flex flex-row items-center justify-between py-3 px-4 border-b border-border/50 bg-muted/30">
           <div>
             <CardTitle className="text-base font-bold">Grafik Bulanan</CardTitle>

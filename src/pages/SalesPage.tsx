@@ -704,21 +704,17 @@ export default function SalesPage() {
                                 setSelectedProductId(product.id);
                                 setIsProductOpen(false);
                               }}
-                              className="flex items-center justify-between py-2 px-3"
+                              className="flex flex-col items-start py-2.5 px-3 cursor-pointer"
                             >
-                              <div className="flex items-center gap-2">
-                                <Check
-                                  className={cn(
-                                    "h-4 w-4 shrink-0",
-                                    selectedProductId === product.id ? "opacity-100" : "opacity-0"
-                                  )}
-                                />
-                                <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
-                                  {product.code}
-                                </span>
-                                <span className="font-medium">{product.name}</span>
-                              </div>
-                              <span className="text-sm text-muted-foreground">{formatCurrency(product.price)}</span>
+                              <span className={cn(
+                                "text-sm",
+                                selectedProductId === product.id ? "text-primary font-medium" : "text-foreground"
+                              )}>
+                                [{product.code}] {product.name}
+                              </span>
+                              <span className="text-xs text-muted-foreground">
+                                {formatCurrency(product.price)}
+                              </span>
                             </CommandItem>
                           ))}
                         </CommandGroup>
@@ -1012,21 +1008,17 @@ export default function SalesPage() {
                               setEditProductId(product.id);
                               setIsEditProductOpen(false);
                             }}
-                            className="flex items-center justify-between py-2 px-3"
+                            className="flex flex-col items-start py-2.5 px-3 cursor-pointer"
                           >
-                            <div className="flex items-center gap-2">
-                              <Check
-                                className={cn(
-                                  "h-4 w-4 shrink-0",
-                                  editProductId === product.id ? "opacity-100" : "opacity-0"
-                                )}
-                              />
-                              <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
-                                {product.code}
-                              </span>
-                              <span className="font-medium">{product.name}</span>
-                            </div>
-                            <span className="text-sm text-muted-foreground">{formatCurrency(product.price)}</span>
+                            <span className={cn(
+                              "text-sm",
+                              editProductId === product.id ? "text-primary font-medium" : "text-foreground"
+                            )}>
+                              [{product.code}] {product.name}
+                            </span>
+                            <span className="text-xs text-muted-foreground">
+                              {formatCurrency(product.price)}
+                            </span>
                           </CommandItem>
                         ))}
                       </CommandGroup>

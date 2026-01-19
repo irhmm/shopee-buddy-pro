@@ -683,7 +683,14 @@ export default function SalesPage() {
                       <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-full p-0 bg-popover z-[100]" align="start" side="bottom" onWheel={(e) => e.stopPropagation()}>
+                  <PopoverContent 
+                    className="w-[var(--radix-popper-anchor-width)] p-0 bg-popover z-[100] max-h-[320px] overflow-hidden" 
+                    align="start" 
+                    side="bottom" 
+                    sideOffset={4}
+                    avoidCollisions={false}
+                    onWheel={(e) => e.stopPropagation()}
+                  >
                     <Command>
                       <CommandInput placeholder="Cari produk..." />
                       <CommandList>
@@ -980,7 +987,14 @@ export default function SalesPage() {
                     <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-full p-0 bg-popover z-[100]" align="start" side="bottom" onWheel={(e) => e.stopPropagation()}>
+                <PopoverContent 
+                  className="w-[var(--radix-popper-anchor-width)] p-0 bg-popover z-[100] max-h-[320px] overflow-hidden" 
+                  align="start" 
+                  side="bottom" 
+                  sideOffset={4}
+                  avoidCollisions={false}
+                  onWheel={(e) => e.stopPropagation()}
+                >
                   <Command>
                     <CommandInput placeholder="Cari produk..." />
                     <CommandList>

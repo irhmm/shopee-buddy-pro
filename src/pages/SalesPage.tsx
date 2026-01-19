@@ -29,7 +29,7 @@ import {
   CommandItem,
   CommandList,
 } from '@/components/ui/command';
-import { Plus, Trash2, BarChart3, TrendingUp, DollarSign, ShoppingCart, Package, Loader2, Calendar as CalendarIcon, Check, ChevronsUpDown, Pencil, Filter, Download, X } from 'lucide-react';
+import { Plus, Trash2, BarChart3, TrendingUp, DollarSign, ShoppingCart, Package, Loader2, Calendar as CalendarIcon, Check, ChevronsUpDown, Pencil, Filter, Download, X, Percent, BadgeDollarSign, Tag } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
@@ -97,6 +97,14 @@ export default function SalesPage() {
   const [isEditCalendarOpen, setIsEditCalendarOpen] = useState(false);
   const [isEditProductOpen, setIsEditProductOpen] = useState(false);
   const [isEditSubmitting, setIsEditSubmitting] = useState(false);
+  
+  // Discount state for add form
+  const [discountType, setDiscountType] = useState<'percentage' | 'fixed' | null>(null);
+  const [discountValue, setDiscountValue] = useState('0');
+  
+  // Discount state for edit form
+  const [editDiscountType, setEditDiscountType] = useState<'percentage' | 'fixed' | null>(null);
+  const [editDiscountValue, setEditDiscountValue] = useState('0');
   
   // Month filter state - default to current month
   const [selectedMonth, setSelectedMonth] = useState(() => {
@@ -274,6 +282,10 @@ export default function SalesPage() {
       'Qty': sale.quantity,
       'Harga Jual': sale.pricePerUnit,
       'Total Penjualan': sale.totalSales,
+      'Tipe Diskon': sale.discountType === 'percentage' ? 'Persentase' : sale.discountType === 'fixed' ? 'Nominal' : 'Tidak Ada',
+      'Nilai Diskon': sale.discountValue || 0,
+      'Jumlah Diskon': sale.discountAmount || 0,
+      'Penjualan Setelah Diskon': sale.totalSalesAfterDiscount,
       'HPP per Unit': sale.hppPerUnit,
       'Total HPP': sale.totalHpp,
       'Biaya Admin': sale.totalAdminFee,
@@ -306,6 +318,8 @@ export default function SalesPage() {
     setEditProductId(sale.productId || '');
     setEditQuantity(String(sale.quantity));
     setEditDate(new Date(sale.createdAt));
+    setEditDiscountType(sale.discountType);
+    setEditDiscountValue(String(sale.discountValue || 0));
     setIsEditDialogOpen(true);
   };
 
@@ -319,7 +333,14 @@ export default function SalesPage() {
 
     setIsEditSubmitting(true);
     try {
-      await updateSale(editingSaleId, editProductId, parseInt(editQuantity), editDate);
+      await updateSale(
+        editingSaleId, 
+        editProductId, 
+        parseInt(editQuantity), 
+        editDate,
+        editDiscountType,
+        editDiscountType ? parseFloat(editDiscountValue) : 0
+      );
       setIsEditDialogOpen(false);
       setEditingSaleId(null);
     } finally {
@@ -336,10 +357,18 @@ export default function SalesPage() {
 
     setIsSubmitting(true);
     try {
-      await addSale(selectedProductId, parseInt(quantity), saleDate);
+      await addSale(
+        selectedProductId, 
+        parseInt(quantity), 
+        saleDate,
+        discountType,
+        discountType ? parseFloat(discountValue) : 0
+      );
       setSelectedProductId('');
       setQuantity('1');
       setSaleDate(new Date());
+      setDiscountType(null);
+      setDiscountValue('0');
       setIsDialogOpen(false);
       toast.success('Penjualan berhasil ditambahkan');
     } finally {
@@ -742,6 +771,72 @@ export default function SalesPage() {
                 />
               </div>
 
+              {/* Discount Section */}
+              <div className="space-y-3">
+                <Label className="flex items-center gap-2">
+                  <Tag className="w-4 h-4" />
+                  Potongan Harga (Opsional)
+                </Label>
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    variant={discountType === null ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => {
+                      setDiscountType(null);
+                      setDiscountValue('0');
+                    }}
+                    disabled={isSubmitting}
+                    className="flex-1"
+                  >
+                    Tidak Ada
+                  </Button>
+                  <Button
+                    type="button"
+                    variant={discountType === 'percentage' ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setDiscountType('percentage')}
+                    disabled={isSubmitting}
+                    className="flex-1 gap-1"
+                  >
+                    <Percent className="w-3 h-3" />
+                    Persen
+                  </Button>
+                  <Button
+                    type="button"
+                    variant={discountType === 'fixed' ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setDiscountType('fixed')}
+                    disabled={isSubmitting}
+                    className="flex-1 gap-1"
+                  >
+                    <BadgeDollarSign className="w-3 h-3" />
+                    Nominal
+                  </Button>
+                </div>
+                
+                {discountType && (
+                  <div className="space-y-2">
+                    <Input
+                      type="number"
+                      min="0"
+                      max={discountType === 'percentage' ? 100 : undefined}
+                      value={discountValue}
+                      onChange={(e) => setDiscountValue(e.target.value)}
+                      placeholder={discountType === 'percentage' ? "Masukkan %" : "Masukkan Rp"}
+                      disabled={isSubmitting}
+                    />
+                    {selectedProductId && parseFloat(discountValue) > 0 && (
+                      <p className="text-xs text-muted-foreground">
+                        Preview: {discountType === 'percentage' 
+                          ? `${discountValue}% dari total` 
+                          : `${formatCurrency(parseFloat(discountValue) || 0)}`} akan dipotong
+                      </p>
+                    )}
+                  </div>
+                )}
+              </div>
+
               {/* Action Buttons */}
               <div className="flex gap-2 pt-2">
                 <Button 
@@ -793,6 +888,7 @@ export default function SalesPage() {
                     <th className="text-left px-4 py-3 font-medium text-foreground text-sm">Produk</th>
                     <th className="text-center px-4 py-3 font-medium text-foreground text-sm">Qty</th>
                     <th className="text-right px-4 py-3 font-medium text-foreground text-sm">Penjualan</th>
+                    <th className="text-right px-4 py-3 font-medium text-foreground text-sm">Diskon</th>
                     <th className="text-right px-4 py-3 font-medium text-foreground text-sm">HPP</th>
                     <th className="text-right px-4 py-3 font-medium text-foreground text-sm">Admin</th>
                     <th className="text-right px-4 py-3 font-medium text-foreground text-sm">Laba</th>
@@ -804,7 +900,7 @@ export default function SalesPage() {
                     <Fragment key={group.dateString}>
                       {/* Daily Summary Header */}
                       <tr className="bg-secondary/80 border-t-2 border-primary/20">
-                        <td colSpan={7} className="px-4 py-3">
+                        <td colSpan={8} className="px-4 py-3">
                           <div className="flex justify-between items-center">
                             <div>
                               <p className="font-bold text-foreground">{group.dateString}</p>
@@ -840,6 +936,18 @@ export default function SalesPage() {
                           </td>
                           <td className="px-4 py-3 text-right text-sm font-medium text-foreground">
                             {formatCurrency(sale.totalSales)}
+                          </td>
+                          <td className="px-4 py-3 text-right text-sm">
+                            {sale.discountAmount > 0 ? (
+                              <span className="text-orange-500">
+                                -{formatCurrency(sale.discountAmount)}
+                                <span className="text-xs text-muted-foreground ml-1">
+                                  ({sale.discountType === 'percentage' ? `${sale.discountValue}%` : 'Rp'})
+                                </span>
+                              </span>
+                            ) : (
+                              <span className="text-muted-foreground">-</span>
+                            )}
                           </td>
                           <td className="px-4 py-3 text-right text-sm text-muted-foreground">
                             {formatCurrency(sale.totalHpp)}
@@ -1039,6 +1147,72 @@ export default function SalesPage() {
                 placeholder="1"
                 disabled={isEditSubmitting}
               />
+            </div>
+
+            {/* Discount Section */}
+            <div className="space-y-3">
+              <Label className="flex items-center gap-2">
+                <Tag className="w-4 h-4" />
+                Potongan Harga (Opsional)
+              </Label>
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant={editDiscountType === null ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => {
+                    setEditDiscountType(null);
+                    setEditDiscountValue('0');
+                  }}
+                  disabled={isEditSubmitting}
+                  className="flex-1"
+                >
+                  Tidak Ada
+                </Button>
+                <Button
+                  type="button"
+                  variant={editDiscountType === 'percentage' ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setEditDiscountType('percentage')}
+                  disabled={isEditSubmitting}
+                  className="flex-1 gap-1"
+                >
+                  <Percent className="w-3 h-3" />
+                  Persen
+                </Button>
+                <Button
+                  type="button"
+                  variant={editDiscountType === 'fixed' ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setEditDiscountType('fixed')}
+                  disabled={isEditSubmitting}
+                  className="flex-1 gap-1"
+                >
+                  <BadgeDollarSign className="w-3 h-3" />
+                  Nominal
+                </Button>
+              </div>
+              
+              {editDiscountType && (
+                <div className="space-y-2">
+                  <Input
+                    type="number"
+                    min="0"
+                    max={editDiscountType === 'percentage' ? 100 : undefined}
+                    value={editDiscountValue}
+                    onChange={(e) => setEditDiscountValue(e.target.value)}
+                    placeholder={editDiscountType === 'percentage' ? "Masukkan %" : "Masukkan Rp"}
+                    disabled={isEditSubmitting}
+                  />
+                  {editProductId && parseFloat(editDiscountValue) > 0 && (
+                    <p className="text-xs text-muted-foreground">
+                      Preview: {editDiscountType === 'percentage' 
+                        ? `${editDiscountValue}% dari total` 
+                        : `${formatCurrency(parseFloat(editDiscountValue) || 0)}`} akan dipotong
+                    </p>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Action Buttons */}

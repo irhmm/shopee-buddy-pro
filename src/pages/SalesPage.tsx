@@ -684,37 +684,41 @@ export default function SalesPage() {
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent 
-                    className="w-[var(--radix-popper-anchor-width)] p-0 bg-popover z-[100] max-h-[320px] overflow-hidden" 
+                    className="w-[var(--radix-popper-anchor-width)] p-0 bg-popover z-[100] h-[min(280px,var(--radix-popper-available-height))] flex flex-col" 
                     align="start" 
                     side="bottom" 
                     sideOffset={4}
                     avoidCollisions={false}
-                    onWheel={(e) => e.stopPropagation()}
+                    onWheelCapture={(e) => e.stopPropagation()}
                   >
-                    <Command>
-                      <CommandInput placeholder="Cari produk..." />
-                      <CommandList>
+                    <Command className="h-full flex flex-col">
+                      <CommandInput placeholder="Cari produk..." autoFocus />
+                      <CommandList className="flex-1 min-h-0">
                         <CommandEmpty>Produk tidak ditemukan.</CommandEmpty>
                         <CommandGroup>
                           {products.map((product) => (
                             <CommandItem
                               key={product.id}
-                              value={`${product.code} ${product.name}`}
+                              value={`${product.id} ${product.code} ${product.name}`}
                               onSelect={() => {
                                 setSelectedProductId(product.id);
                                 setIsProductOpen(false);
                               }}
+                              className="flex items-center justify-between py-2 px-3"
                             >
-                              <Check
-                                className={cn(
-                                  "mr-2 h-4 w-4",
-                                  selectedProductId === product.id ? "opacity-100" : "opacity-0"
-                                )}
-                              />
-                              <div className="flex flex-col">
-                                <span className="font-medium">[{product.code}] {product.name}</span>
-                                <span className="text-xs text-muted-foreground">{formatCurrency(product.price)}</span>
+                              <div className="flex items-center gap-2">
+                                <Check
+                                  className={cn(
+                                    "h-4 w-4 shrink-0",
+                                    selectedProductId === product.id ? "opacity-100" : "opacity-0"
+                                  )}
+                                />
+                                <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
+                                  {product.code}
+                                </span>
+                                <span className="font-medium">{product.name}</span>
                               </div>
+                              <span className="text-sm text-muted-foreground">{formatCurrency(product.price)}</span>
                             </CommandItem>
                           ))}
                         </CommandGroup>
@@ -988,37 +992,41 @@ export default function SalesPage() {
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent 
-                  className="w-[var(--radix-popper-anchor-width)] p-0 bg-popover z-[100] max-h-[320px] overflow-hidden" 
+                  className="w-[var(--radix-popper-anchor-width)] p-0 bg-popover z-[100] h-[min(280px,var(--radix-popper-available-height))] flex flex-col" 
                   align="start" 
                   side="bottom" 
                   sideOffset={4}
                   avoidCollisions={false}
-                  onWheel={(e) => e.stopPropagation()}
+                  onWheelCapture={(e) => e.stopPropagation()}
                 >
-                  <Command>
-                    <CommandInput placeholder="Cari produk..." />
-                    <CommandList>
+                  <Command className="h-full flex flex-col">
+                    <CommandInput placeholder="Cari produk..." autoFocus />
+                    <CommandList className="flex-1 min-h-0">
                       <CommandEmpty>Produk tidak ditemukan.</CommandEmpty>
                       <CommandGroup>
                         {products.map((product) => (
                           <CommandItem
                             key={product.id}
-                            value={`${product.code} ${product.name}`}
+                            value={`${product.id} ${product.code} ${product.name}`}
                             onSelect={() => {
                               setEditProductId(product.id);
                               setIsEditProductOpen(false);
                             }}
+                            className="flex items-center justify-between py-2 px-3"
                           >
-                            <Check
-                              className={cn(
-                                "mr-2 h-4 w-4",
-                                editProductId === product.id ? "opacity-100" : "opacity-0"
-                              )}
-                            />
-                            <div className="flex flex-col">
-                              <span className="font-medium">[{product.code}] {product.name}</span>
-                              <span className="text-xs text-muted-foreground">{formatCurrency(product.price)}</span>
+                            <div className="flex items-center gap-2">
+                              <Check
+                                className={cn(
+                                  "h-4 w-4 shrink-0",
+                                  editProductId === product.id ? "opacity-100" : "opacity-0"
+                                )}
+                              />
+                              <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
+                                {product.code}
+                              </span>
+                              <span className="font-medium">{product.name}</span>
                             </div>
+                            <span className="text-sm text-muted-foreground">{formatCurrency(product.price)}</span>
                           </CommandItem>
                         ))}
                       </CommandGroup>

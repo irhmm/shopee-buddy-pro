@@ -208,6 +208,8 @@ export type Database = {
       sales: {
         Row: {
           created_at: string
+          discount_type: string | null
+          discount_value: number | null
           franchise_id: string | null
           hpp_per_unit: number
           id: string
@@ -223,6 +225,8 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          discount_type?: string | null
+          discount_value?: number | null
           franchise_id?: string | null
           hpp_per_unit?: number
           id?: string
@@ -238,6 +242,8 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          discount_type?: string | null
+          discount_value?: number | null
           franchise_id?: string | null
           hpp_per_unit?: number
           id?: string

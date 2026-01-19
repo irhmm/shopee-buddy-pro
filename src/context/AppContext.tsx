@@ -30,11 +30,15 @@ interface RawSaleRecord {
   hppPerUnit: number;
   totalSales: number;
   totalHpp: number;
+  discountType: 'percentage' | 'fixed' | null;
+  discountValue: number;
   createdAt: Date;
 }
 
 // Sale record with dynamically calculated admin fee and profit
 export interface SaleRecord extends RawSaleRecord {
+  discountAmount: number;
+  totalSalesAfterDiscount: number;
   totalAdminFee: number;
   netProfit: number;
 }
@@ -47,8 +51,8 @@ interface AppContextType {
   settings: AdminSettings;
   updateSettings: (settings: AdminSettings) => Promise<void>;
   sales: SaleRecord[];
-  addSale: (productId: string, quantity: number, saleDate?: Date) => Promise<void>;
-  updateSale: (id: string, productId: string, quantity: number, saleDate: Date) => Promise<void>;
+  addSale: (productId: string, quantity: number, saleDate?: Date, discountType?: 'percentage' | 'fixed' | null, discountValue?: number) => Promise<void>;
+  updateSale: (id: string, productId: string, quantity: number, saleDate: Date, discountType?: 'percentage' | 'fixed' | null, discountValue?: number) => Promise<void>;
   deleteSale: (id: string) => Promise<void>;
   loading: boolean;
   refreshData: () => Promise<void>;
@@ -63,15 +67,29 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [rawSales, setRawSales] = useState<RawSaleRecord[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Dynamically calculate admin fee and net profit based on current settings
+  // Dynamically calculate discount, admin fee and net profit based on current settings
   const sales = useMemo<SaleRecord[]>(() => {
     return rawSales.map((sale) => {
-      const adminFeeFromPercent = (sale.totalSales * settings.adminFeePercent) / 100;
+      // Calculate discount amount
+      let discountAmount = 0;
+      if (sale.discountType === 'percentage') {
+        discountAmount = (sale.totalSales * sale.discountValue) / 100;
+      } else if (sale.discountType === 'fixed') {
+        discountAmount = sale.discountValue;
+      }
+      
+      // Ensure discount doesn't exceed total sales
+      discountAmount = Math.min(discountAmount, sale.totalSales);
+      
+      const totalSalesAfterDiscount = sale.totalSales - discountAmount;
+      const adminFeeFromPercent = (totalSalesAfterDiscount * settings.adminFeePercent) / 100;
       const totalAdminFee = adminFeeFromPercent + settings.fixedDeduction;
-      const netProfit = sale.totalSales - sale.totalHpp - totalAdminFee;
+      const netProfit = totalSalesAfterDiscount - sale.totalHpp - totalAdminFee;
       
       return {
         ...sale,
+        discountAmount,
+        totalSalesAfterDiscount,
         totalAdminFee,
         netProfit,
       };
@@ -154,6 +172,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
         hppPerUnit: Number(s.hpp_per_unit),
         totalSales: Number(s.total_sales),
         totalHpp: Number(s.total_hpp),
+        discountType: s.discount_type as 'percentage' | 'fixed' | null,
+        discountValue: Number(s.discount_value || 0),
         createdAt: new Date(s.created_at),
       }))
     );
@@ -266,7 +286,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     await fetchSettings();
   };
 
-  const addSale = async (productId: string, quantity: number, saleDate?: Date) => {
+  const addSale = async (productId: string, quantity: number, saleDate?: Date, discountType?: 'percentage' | 'fixed' | null, discountValue?: number) => {
     if (!franchiseId) return;
     
     const product = products.find((p) => p.id === productId);
@@ -286,6 +306,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
       total_hpp: totalHpp,
       total_admin_fee: 0,
       net_profit: 0,
+      discount_type: discountType || null,
+      discount_value: discountValue || 0,
       franchise_id: franchiseId,
       created_at: saleDate ? saleDate.toISOString() : new Date().toISOString(),
     });
@@ -299,7 +321,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     await fetchSales();
   };
 
-  const updateSale = async (id: string, productId: string, quantity: number, saleDate: Date) => {
+  const updateSale = async (id: string, productId: string, quantity: number, saleDate: Date, discountType?: 'percentage' | 'fixed' | null, discountValue?: number) => {
     const product = products.find((p) => p.id === productId);
     if (!product) {
       toast.error('Produk tidak ditemukan');
@@ -320,6 +342,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
         hpp_per_unit: product.hpp,
         total_sales: totalSales,
         total_hpp: totalHpp,
+        discount_type: discountType || null,
+        discount_value: discountValue || 0,
         created_at: saleDate.toISOString(),
       })
       .eq('id', id);

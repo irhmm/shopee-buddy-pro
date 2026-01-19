@@ -100,11 +100,11 @@ export default function SalesPage() {
   
   // Discount state for add form
   const [discountType, setDiscountType] = useState<'percentage' | 'fixed' | null>(null);
-  const [discountValue, setDiscountValue] = useState('0');
+  const [discountValue, setDiscountValue] = useState('');
   
   // Discount state for edit form
   const [editDiscountType, setEditDiscountType] = useState<'percentage' | 'fixed' | null>(null);
-  const [editDiscountValue, setEditDiscountValue] = useState('0');
+  const [editDiscountValue, setEditDiscountValue] = useState('');
   
   // Month filter state - default to current month
   const [selectedMonth, setSelectedMonth] = useState(() => {
@@ -319,7 +319,7 @@ export default function SalesPage() {
     setEditQuantity(String(sale.quantity));
     setEditDate(new Date(sale.createdAt));
     setEditDiscountType(sale.discountType);
-    setEditDiscountValue(String(sale.discountValue || 0));
+    setEditDiscountValue(sale.discountValue ? String(sale.discountValue) : '');
     setIsEditDialogOpen(true);
   };
 
@@ -368,7 +368,7 @@ export default function SalesPage() {
       setQuantity('1');
       setSaleDate(new Date());
       setDiscountType(null);
-      setDiscountValue('0');
+      setDiscountValue('');
       setIsDialogOpen(false);
       toast.success('Penjualan berhasil ditambahkan');
     } finally {
@@ -784,7 +784,7 @@ export default function SalesPage() {
                     size="sm"
                     onClick={() => {
                       setDiscountType(null);
-                      setDiscountValue('0');
+                      setDiscountValue('');
                     }}
                     disabled={isSubmitting}
                     className="flex-1"
@@ -1162,7 +1162,7 @@ export default function SalesPage() {
                   size="sm"
                   onClick={() => {
                     setEditDiscountType(null);
-                    setEditDiscountValue('0');
+                    setEditDiscountValue('');
                   }}
                   disabled={isEditSubmitting}
                   className="flex-1"

@@ -99,7 +99,7 @@ export default function SettingsPage() {
                 <Input
                   id="adminFeePercent"
                   type="number"
-                  step="0.1"
+                  step="any"
                   min="0"
                   max="100"
                   value={formData.adminFeePercent}
@@ -123,6 +123,7 @@ export default function SettingsPage() {
               <Input
                 id="fixedDeduction"
                 type="number"
+                step="any"
                 min="0"
                 value={formData.fixedDeduction}
                 onChange={(e) =>
